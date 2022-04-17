@@ -4,6 +4,7 @@ from typing import List, Optional
 import numpy as np
 import pygame as pg
 
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREY = (50, 50, 50)
@@ -23,15 +24,15 @@ class Game:
     def __init__(self, screen_height, screen_width) -> None:
         self.width = 10
         self.height = 10
-        self.margin = 2
+        self.margin = 1
 
         self.rows = screen_height // (self.height + self.margin)
         self.columns = screen_width // (self.width + self.margin)
         print(f"Game setup with {self.rows} rows & {self.columns} columns.")
 
-        self.grid = np.zeros((self.columns, self.rows))
+        self.reset()
 
-        self.random_seed()
+        self.decay_rate = 0.015
 
     def evolve(self, grid=None):
         grid = grid or self.grid
@@ -48,16 +49,29 @@ class Game:
                              grid[(x - 1) % cols, (y - 1) % rows] + grid[(x + 1) % cols, (y - 1) % rows] +
                              grid[(x - 1) % cols, (y + 1) % rows] + grid[(x + 1) % cols, (y + 1) % rows])
 
-                # Rules
-                if state == 0 and neighbors == 3:
-                    new_grid[x, y] = 1
-                elif state == 1 and (neighbors < 2):
-                    new_grid[x, y] = 0
-                elif state == 1 and (neighbors > 3):
-                    new_grid[x, y] = 0
-                else:
-                    new_grid[x, y] = state
+                # Évolution
+                new_state = Game.conway(neighbors, state)
+                new_grid[x, y] = new_state
+
+        # Décomposition
+        nb_decompose = int(self.columns * self.rows * self.decay_rate)
+        indices_x = np.random.randint(0, self.grid.shape[0], nb_decompose)
+        indices_y = np.random.randint(0, self.grid.shape[1], nb_decompose)
+        new_grid[indices_x, indices_y] = 0
+
         self.grid = new_grid
+
+    @staticmethod
+    def conway(neighbors, state):
+        if state == 0 and neighbors == 3:
+            new_state = 1
+        elif state == 1 and (neighbors < 2):
+            new_state = 0
+        elif state == 1 and (neighbors > 5):
+            new_state = 0
+        else:
+            new_state = state
+        return new_state
 
     def render_tiles(self) -> List[Tile]:
         tiles = []
@@ -66,7 +80,6 @@ class Game:
                 color = BLACK
                 if self.grid[column, row] == 1:
                     color = WHITE
-                    print(f"{column}x{row} is W!")
                 rect = [(self.margin + self.width) * column + self.margin,
                         (self.margin + self.height) * row + self.margin,
                         self.width, self.height]
@@ -92,6 +105,10 @@ class Game:
         for i in range(self.columns):
             for j in range(self.width):
                 self.grid[i, j] = randint(0, 1)
+
+    def reset(self):
+        self.grid = np.zeros((self.columns, self.rows))
+        self.random_seed()
 
 
 class App:
@@ -147,7 +164,7 @@ class App:
         self.on_init()
 
         while self.running:
-            self.clock.tick(5)
+            self.clock.tick(10)
             for event in pg.event.get():
                 self.on_event(event)
             self.on_loop()
@@ -155,10 +172,10 @@ class App:
         self.on_cleanup()
 
     def on_reset(self):
-        pass
+        self.game.reset()
 
 
 if __name__ == '__main__':
-    app = App()
+    app = App(256, 256)
     app.on_execute()
     print("DONE")
