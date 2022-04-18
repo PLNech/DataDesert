@@ -7,16 +7,21 @@ import pygame as pg
 import pygame_widgets
 from pygame_widgets.textbox import TextBox
 
-INCREMENT_GROWTH = 0.002
+INCREMENT_GROWTH = 0.0001
 INCREMENT_DECAY = 0.001
 
 MAX_FPS = 60
 MIN_FPS = 1
 
+# MAIN THEME
 BLACK = (8, 8, 8)
 WHITE = (255, 255, 255)
 GREY = (50, 50, 50)
 
+# Desert Theme
+BLACK = (255, 213, 0)
+WHITE = (255, 255, 255)
+GREY = (150, 150, 150)
 
 class Tile:
     color: tuple[int, int, int]
@@ -35,10 +40,12 @@ class Game:
 
     print_stats: bool = False
 
+    grid: np.ndarray
+
     def __init__(self, screen_height, screen_width) -> None:
         self.width = 10
         self.height = 10
-        self.margin = 4
+        self.margin = 2
 
         self.rows = screen_height // (self.height + self.margin)
         self.columns = screen_width // (self.width + self.margin)
@@ -46,9 +53,9 @@ class Game:
 
         self.must_seed = True
 
-        self.seed_rate = 0.05
+        self.seed_rate = 0.15
         self.decay_rate = 0.015
-        self.growth_rate = 0.005
+        self.growth_rate = 0.0005
 
     def evolve(self, grid=None):
         grid = grid or self.grid
@@ -69,7 +76,8 @@ class Game:
                                 grid[(x - 1) % cols, y], grid[(x + 1) % cols, y],
                                 grid[(x - 1) % cols, (y - 1) % rows], grid[(x + 1) % cols, (y - 1) % rows],
                                 grid[(x - 1) % cols, (y + 1) % rows], grid[(x + 1) % cols, (y + 1) % rows]]
-                neighbor_sum = sum([int(bool(n)) for n in neighborhood])
+                neighbor_sum = sum([(0 if n < 1 else 1) for n in neighborhood])
+                neighbor_old_sum = sum([int(bool(n)) for n in neighborhood])
 
                 # Évolution
                 new_state = self.conway(neighbor_sum, state)
@@ -79,31 +87,37 @@ class Game:
             print(
                 f"States stats: Alive={np.count_nonzero(self.grid):5}/{np.size(self.grid):5}, Max={int(np.max(self.grid)):3}")
 
-        # Décomposition
-        nb_decompose = int(self.columns * self.rows * self.decay_rate)
-        nb_grow = int(self.columns * self.rows * self.growth_rate)
-        decompose_x = np.random.randint(0, self.grid.shape[0], nb_decompose)
-        decompose_y = np.random.randint(0, self.grid.shape[1], nb_decompose)
-        new_grid[decompose_x, decompose_y] = 0
-
-        grow_x = np.random.randint(0, self.grid.shape[0], nb_grow)
-        grow_y = np.random.randint(0, self.grid.shape[1], nb_grow)
-        self.grow(new_grid, grow_x, grow_y)
+        self.decompose(new_grid)
+        self.growth(new_grid)
 
         self.grid = new_grid
+
+    def growth(self, grid):
+        nb_grow = int(self.columns * self.rows * self.growth_rate)
+        grow_x = np.random.randint(0, self.grid.shape[0], nb_grow)
+        grow_y = np.random.randint(0, self.grid.shape[1], nb_grow)
+        self.grow_at(grid, grow_x, grow_y, size=1)
+
+    def decompose(self, grid):
+        nb_decompose = int(self.columns * self.rows * self.decay_rate)
+        decompose_x = np.random.randint(0, self.grid.shape[0], nb_decompose)
+        decompose_y = np.random.randint(0, self.grid.shape[1], nb_decompose)
+        grid[decompose_x, decompose_y] = 0
 
     def conway(self, neighbor_sum, state):
         new_state = state
         # TODO: Stateful conway
         # for rule in self.rules:
         #     rule.apply(state, neighbors)
-        if state == 0:
+        if state <= 0:
             if neighbor_sum == 3:
                 new_state = 1
+            else:
+                new_state -= 1
         else:
             if neighbor_sum < 2:
                 new_state = 0
-            elif neighbor_sum > 3:
+            elif neighbor_sum > 4:
                 new_state = 0
             else:
                 new_state += 1
@@ -116,14 +130,14 @@ class Game:
                 color = BLACK
                 cell = self.grid[column, row]
                 if cell > 0:
-                    r, g, b = WHITE
-                    r = 0 + cell / 100
-                    b = 25 + cell / 10
-                    g = min(255, 100 + cell)
+                    r = int((0 + cell / 25) % 255)
+                    b = int((25 + cell / 10) % 255)
+                    g = int(max(200 - cell*10, 85) % 255)
                     color = r, g, b
-                    # if cell > 0:
-                    # print(f"{cell} => {color}")
-
+                else:
+                    r = (255 + cell)
+                    g = 0
+                    b = 0
                 rect = [(self.margin + self.width) * column + self.margin,
                         (self.margin + self.height) * row + self.margin,
                         self.width, self.height]
@@ -145,7 +159,7 @@ class Game:
 
             if is_left or is_right:
                 val = 1 if is_left else 0
-                self.grow(self.grid, column, row)
+                self.grow_at(self.grid, column, row)
                 print(f"Growth at {column}x{row} (->{val})")
 
     def random_seed(self):
@@ -161,12 +175,14 @@ class Game:
     def init_grid(self):
         self.grid = np.zeros((self.columns, self.rows))
 
-    def grow(self, new_grid, grow_x, grow_y, val=1):
+    def grow_at(self, new_grid, grow_x, grow_y, val=1, size=4):
         relative_coords = [[grow_x, grow_y],
                            [grow_x + 1, grow_y],
                            [grow_x, grow_y + 1],
                            [grow_x + 1, grow_y + 1]]
-        for x, y in relative_coords:
+        for i, (x, y) in enumerate(relative_coords, 1):
+            if i > size:
+                break
             try:
                 new_grid[x, y] = val
             except IndexError:
@@ -177,12 +193,13 @@ class App:
     running: bool = True
     paused: bool = False
 
+    display: pg.Surface
+    background: pg.Surface
+
     def __init__(self, width=300, height=None):
         self.tick: int = 60
         height = height or width
         self.clock: pg.time.Clock = pg.time.Clock()
-        self.display: pg.Surface = None
-        self.background: pg.Surface = None
         self.size = self.width, self.height = width, height  # FIXME Accessors
 
         self.game = Game(width, height)
@@ -199,9 +216,9 @@ class App:
 
         # UI
         fontSize = 30
-        uiBaseX = self.pwidth(0.758)
-        uiBaseY = self.pheight(0.015)
-        uiWidth = 200
+        uiBaseX = self.pwidth(0.835)
+        uiBaseY = self.pheight(0.006)
+        uiWidth = 190
         uiHeight = 45
         self.ui: Dict[str, TextBox] = {
             "tick": TextBox(self.display, uiBaseX, self.uiheight(uiBaseY, 0), uiWidth, uiHeight, fontSize=fontSize),
@@ -253,7 +270,7 @@ class App:
                 print(f"Decay ↗ [{self.game.decay_rate}]")
             elif event.key == pg.K_s:
                 self.game.decay_rate = max(0.0, self.game.decay_rate - INCREMENT_DECAY)
-                print(f"Decay ↘ [{self.game.growth_rate}]")
+                print(f"Decay ↘ [{self.game.decay_rate}]")
             elif event.key in [pg.K_EQUALS, pg.K_KP_EQUALS, pg.K_PLUS, pg.K_KP_PLUS]:
                 self.tick = min(MAX_FPS, self.tick + 1)
                 print(f"Tick ↗ [{self.tick}]")
@@ -277,12 +294,12 @@ class App:
         del tiles
 
         texts = {
-            "tick":  f"Tick rate: {self.tick if not self.paused else 'PAUSED':7}",
-            "alive":  f"Alive : {np.count_nonzero(self.game.grid):5}/{np.size(self.game.grid):5}",
+            "tick": f"Tick rate: {self.tick if not self.paused else 'PAUSED':7}",
+            "alive": f"Alive : {np.count_nonzero(self.game.grid):5}/{np.size(self.game.grid):5}",
             "growth": f"Growth: {self.game.growth_rate:5.4f}",
-            "decay":  f"Decay : {self.game.decay_rate:5.4f}",
+            "decay": f"Decay : {self.game.decay_rate:5.4f}",
             "oldest": f"Oldest: {int(np.max(self.game.grid)):5}",
-            "avg":    f"Average:{np.average(np.nonzero(self.game.grid)):5.2f}",
+            "avg": f"Average:{np.average(np.nonzero(self.game.grid)):5.2f}",
         }
         for stat, text in texts.items():
             self.ui[stat].setText(text)
@@ -311,10 +328,10 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App(1024, 768)
+    app = App(1200, 1000)
     app.tick = 12
 
-    is_classic = True
+    is_classic = False
     if is_classic:
         app.game.growth_rate = 0
         app.game.decay_rate = 0
