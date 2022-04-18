@@ -12,6 +12,8 @@ Based on NumPy and PyGame:
 ## Controls
 - `[Escape]` exits the garden
 - `[P]` pauses the garden's evolution
+- `[+]` accelerates the simulation's time
+- `[+]` slows the simulation's time
 - `[R]` resets the garden with a new seed
 - `[Q]` increases the growth rate
 - `[W]` decreases the growth rate
