@@ -23,6 +23,7 @@ BLACK = (255, 213, 0)
 WHITE = (255, 255, 255)
 GREY = (150, 150, 150)
 
+
 class Tile:
     color: tuple[int, int, int]
     rect: Optional[list[int]]
@@ -39,6 +40,7 @@ class Game:
     growth_rate: float
 
     print_stats: bool = False
+    is_classic: bool = False
 
     grid: np.ndarray
 
@@ -117,6 +119,8 @@ class Game:
         else:
             if neighbor_sum < 2:
                 new_state = 0
+            elif neighbor_sum == 3:
+                new_state = 0 if self.is_classic else 1
             elif neighbor_sum > 4:
                 new_state = 0
             else:
@@ -132,7 +136,7 @@ class Game:
                 if cell > 0:
                     r = int((0 + cell / 25) % 255)
                     b = int((25 + cell / 10) % 255)
-                    g = int(max(200 - cell*10, 85) % 255)
+                    g = int(max(200 - cell * 10, 85) % 255)
                     color = r, g, b
                 else:
                     r = (255 + cell)
@@ -171,6 +175,11 @@ class Game:
     def reset(self):
         self.init_grid()
         self.random_seed()
+
+        if self.is_classic:
+            self.growth_rate = 0
+            self.decay_rate = 0
+
 
     def init_grid(self):
         self.grid = np.zeros((self.columns, self.rows))
@@ -226,7 +235,8 @@ class App:
             "growth": TextBox(self.display, uiBaseX, self.uiheight(uiBaseY, 2), uiWidth, uiHeight, fontSize=fontSize),
             "decay": TextBox(self.display, uiBaseX, self.uiheight(uiBaseY, 3), uiWidth, uiHeight, fontSize=fontSize),
             "oldest": TextBox(self.display, uiBaseX, self.uiheight(uiBaseY, 4), uiWidth, uiHeight, fontSize=fontSize),
-            "avg": TextBox(self.display, uiBaseX, self.uiheight(uiBaseY, 5), uiWidth, uiHeight, fontSize=fontSize),
+            "average": TextBox(self.display, uiBaseX, self.uiheight(uiBaseY, 5), uiWidth, uiHeight, fontSize=fontSize),
+            "fourth": TextBox(self.display, uiBaseX, self.uiheight(uiBaseY, 6), uiWidth, uiHeight, fontSize=fontSize),
         }
         for box in self.ui.values():
             box.disable()
@@ -257,6 +267,8 @@ class App:
                 self.on_reset()
             if event.key == pg.K_p:
                 self.paused = not self.paused
+            if event.key == pg.K_f:
+                self.game.is_classic = not self.game.is_classic
             if event.key == pg.K_o:
                 self.game.print_stats = not self.game.print_stats
             elif event.key == pg.K_q:
@@ -299,7 +311,8 @@ class App:
             "growth": f"Growth: {self.game.growth_rate:5.4f}",
             "decay": f"Decay : {self.game.decay_rate:5.4f}",
             "oldest": f"Oldest: {int(np.max(self.game.grid)):5}",
-            "avg": f"Average:{np.average(np.nonzero(self.game.grid)):5.2f}",
+            "average": f"Average:{np.average(np.nonzero(self.game.grid)):5.2f}",
+            "fourth": f"4th? :{not self.game.is_classic}",
         }
         for stat, text in texts.items():
             self.ui[stat].setText(text)
@@ -331,12 +344,8 @@ if __name__ == '__main__':
     app = App(1200, 1000)
     app.tick = 12
 
-    is_classic = False
-    if is_classic:
-        app.game.growth_rate = 0
-        app.game.decay_rate = 0
-
     print(f"Created app: {app.tick}")
+    app.game.is_classic = False
     app.game.reset()
     # app.paused = True
     app.on_execute()
