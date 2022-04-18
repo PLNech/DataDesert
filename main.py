@@ -159,12 +159,12 @@ class Game:
         if column > self.columns or row > self.rows:
             pass  # print("Out of game bounds.")
         else:
-            print(f"Game click: left={is_left},right={is_right}")
+            # print(f"Game click: left={is_left},right={is_right}")
 
             if is_left or is_right:
                 val = 1 if is_left else 0
                 self.grow_at(self.grid, column, row)
-                print(f"Growth at {column}x{row} (->{val})")
+                # print(f"Growth at {column}x{row} (->{val})")
 
     def random_seed(self):
         nb_seed = int(self.columns * self.rows * self.seed_rate)
@@ -273,22 +273,16 @@ class App:
                 self.game.print_stats = not self.game.print_stats
             elif event.key == pg.K_q:
                 self.game.growth_rate += INCREMENT_GROWTH
-                print(f"Growth ↗ [{self.game.growth_rate}]")
             elif event.key == pg.K_w:
                 self.game.growth_rate = max(0.0, self.game.growth_rate - INCREMENT_GROWTH)
-                print(f"Growth ↘ [{self.game.growth_rate}]")
             elif event.key == pg.K_a:
                 self.game.decay_rate += INCREMENT_DECAY
-                print(f"Decay ↗ [{self.game.decay_rate}]")
             elif event.key == pg.K_s:
                 self.game.decay_rate = max(0.0, self.game.decay_rate - INCREMENT_DECAY)
-                print(f"Decay ↘ [{self.game.decay_rate}]")
             elif event.key in [pg.K_EQUALS, pg.K_KP_EQUALS, pg.K_PLUS, pg.K_KP_PLUS]:
                 self.tick = min(MAX_FPS, self.tick + 1)
-                print(f"Tick ↗ [{self.tick}]")
             elif event.key in [pg.K_MINUS, pg.K_KP_MINUS, pg.K_UNKNOWN]:
                 self.tick = max(MIN_FPS, self.tick - 1)
-                print(f"Tick ↘ [{self.tick}]")
             else:
                 print(f"Unhandled key: {event.key}")
 
@@ -305,14 +299,16 @@ class App:
             pg.draw.rect(self.display, tile.color, tile.rect)
         del tiles
 
+        masked = np.ma.masked_less(self.game.grid, 1)
+        average = masked.mean()
         texts = {
-            "tick": f"Tick rate: {self.tick if not self.paused else 'PAUSED':7}",
-            "alive": f"Alive : {np.count_nonzero(self.game.grid):5}/{np.size(self.game.grid):5}",
-            "growth": f"Growth: {self.game.growth_rate:5.4f}",
-            "decay": f"Decay : {self.game.decay_rate:5.4f}",
-            "oldest": f"Oldest: {int(np.max(self.game.grid)):5}",
-            "average": f"Average:{np.average(np.nonzero(self.game.grid)):5.2f}",
-            "fourth": f"4th? :{not self.game.is_classic}",
+            "tick": f"Tick rate: {self.tick if not self.paused else 'PAUSED':11}",
+            "alive": f"Alive: {np.count_nonzero(self.game.grid):5} /{np.size(self.game.grid):5}",
+            "growth": f"Growth:     {self.game.growth_rate:5.4f}",
+            "decay": f"Decay :      {self.game.decay_rate:5.4f}",
+            "oldest": f"Oldest:        {int(np.max(self.game.grid)):5}",
+            "average": f"Average:     {average :5.2f}",
+            "fourth": f"4th? :          {not self.game.is_classic}",
         }
         for stat, text in texts.items():
             self.ui[stat].setText(text)
