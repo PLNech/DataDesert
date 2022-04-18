@@ -1,10 +1,12 @@
-#! /usr/bin/env python3
+# ! /usr/bin/env python3
 
-from random import randint
 from typing import List, Optional
 
 import numpy as np
 import pygame as pg
+
+INCREMENT_GROWTH = 0.002
+INCREMENT_DECAY = 0.001
 
 MAX_FPS = 60
 MIN_FPS = 1
@@ -24,6 +26,10 @@ class Tile:
 
 
 class Game:
+    must_seed: bool
+    seed_rate: float
+    decay_rate: float
+    growth_rate: float
 
     def __init__(self, screen_height, screen_width) -> None:
         self.width = 10
@@ -34,8 +40,9 @@ class Game:
         self.columns = screen_width // (self.width + self.margin)
         print(f"Game setup with {self.rows} rows & {self.columns} columns.")
 
-        self.reset()
+        self.must_seed = True
 
+        self.seed_rate = 0.05
         self.decay_rate = 0.015
         self.growth_rate = 0.005
 
@@ -46,6 +53,11 @@ class Game:
 
         new_grid = grid.copy()
 
+        if self.must_seed:
+            print("Seeding...")
+            self.reset()
+            self.must_seed = False
+
         for x in range(0, cols):
             for y in range(0, rows):
                 state = grid[x, y]
@@ -54,8 +66,8 @@ class Game:
                              grid[(x - 1) % cols, (y - 1) % rows] + grid[(x + 1) % cols, (y - 1) % rows] +
                              grid[(x - 1) % cols, (y + 1) % rows] + grid[(x + 1) % cols, (y + 1) % rows])
 
-                # Évolution
-                new_state = Game.conway(neighbors, state)
+                # Évolutionc
+                new_state = self.conway(neighbors, state)
                 new_grid[x, y] = new_state
 
         # Décomposition
@@ -71,9 +83,11 @@ class Game:
 
         self.grid = new_grid
 
-    @staticmethod
-    def conway(neighbors, state):
+    def conway(self, neighbors, state):
         new_state = state
+        # TODO: Stateful conway
+        # for rule in self.rules:
+        #     rule.apply(state, neighbors)
         if state == 0:
             if neighbors == 3:
                 new_state = 1
@@ -118,13 +132,17 @@ class Game:
             print(f"Growth at {column}x{row} (->{val})")
 
     def random_seed(self):
-        for i in range(self.columns):
-            for j in range(self.width):
-                self.grid[i, j] = randint(0, 1)
+        nb_seed = int(self.columns * self.rows * self.seed_rate)
+        seed_x = np.random.randint(0, self.grid.shape[0], nb_seed)
+        seed_y = np.random.randint(0, self.grid.shape[1], nb_seed)
+        self.grid[seed_x, seed_y] = 1
 
     def reset(self):
-        self.grid = np.zeros((self.columns, self.rows))
+        self.init_grid()
         self.random_seed()
+
+    def init_grid(self):
+        self.grid = np.zeros((self.columns, self.rows))
 
     def grow(self, new_grid, grow_x, grow_y, val=1):
         relative_coords = [[grow_x, grow_y],
@@ -135,7 +153,7 @@ class Game:
             try:
                 new_grid[x, y] = val
             except IndexError:
-                pass
+                pass  # Out of grid bounds - TODO Wrap? Or display "walls"?
 
 
 class App:
@@ -146,10 +164,12 @@ class App:
         self.tick: int = 60
         height = height or width
         self.clock: pg.time.Clock = pg.time.Clock()
-        self.game = Game(width, height)
         self.display: pg.Surface = None
         self.background: pg.Surface = None
         self.size = self.width, self.height = width, height  # FIXME Accessors
+
+        self.game = Game(width, height)
+        self.game.init_grid()
 
     def on_init(self, tick: int = None):
         pg.init()
@@ -178,21 +198,23 @@ class App:
             if event.key == pg.K_p:
                 self.paused = not self.paused
             elif event.key == pg.K_q:
-                self.game.growth_rate += 0.01
-                print(f"GROWTH+[{self.game.growth_rate}]")
+                self.game.growth_rate += INCREMENT_GROWTH
+                print(f"Growth ↗ [{self.game.growth_rate}]")
             elif event.key == pg.K_w:
-                self.game.growth_rate = max(0, self.game.growth_rate - 0.01)
-                print(f"GROWTH-[{self.game.growth_rate}]")
+                self.game.growth_rate = max(0.0, self.game.growth_rate - INCREMENT_GROWTH)
+                print(f"Growth ↘ [{self.game.growth_rate}]")
             elif event.key == pg.K_a:
-                self.game.decay_rate += 0.01
-                print(f"DECAY+[{self.game.decay_rate}]")
+                self.game.decay_rate += INCREMENT_DECAY
+                print(f"Decay ↗ [{self.game.decay_rate}]")
             elif event.key == pg.K_s:
-                self.game.decay_rate = max(0, self.game.decay_rate - 0.01)
-                print(f"DECAY-[{self.game.growth_rate}]")
+                self.game.decay_rate = max(0.0, self.game.decay_rate - INCREMENT_DECAY)
+                print(f"Decay ↘ [{self.game.growth_rate}]")
             elif event.key in [pg.K_EQUALS, pg.K_KP_EQUALS, pg.K_PLUS, pg.K_KP_PLUS]:
                 self.tick = min(MAX_FPS, self.tick + 1)
+                print(f"Tick ↗ [{self.tick}]")
             elif event.key in [pg.K_MINUS, pg.K_KP_MINUS, pg.K_UNKNOWN]:
                 self.tick = max(MIN_FPS, self.tick - 1)
+                print(f"Tick ↘ [{self.tick}]")
             else:
                 print(f"Unhandled key: {event.key}")
 
@@ -213,7 +235,7 @@ class App:
     def on_cleanup(self):
         pg.quit()
 
-    def on_execute(self, tick=10):
+    def on_execute(self, tick: int = None):
         self.on_init(tick)
 
         while self.running:
@@ -229,6 +251,15 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App(512)
-    app.on_execute(3)
+    app = App(1024)
+    app.tick = 12
+
+    is_classic = True
+    if is_classic:
+        app.game.growth_rate = 0
+        app.game.decay_rate = 0
+
+    print(f"Created app: {app.tick}")
+    app.game.reset()
+    app.on_execute()
     print("DONE")
