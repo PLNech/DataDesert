@@ -1,9 +1,13 @@
+#! /usr/bin/env python3
+
 from random import randint
 from typing import List, Optional
 
 import numpy as np
 import pygame as pg
 
+MAX_FPS = 60
+MIN_FPS = 1
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -24,7 +28,7 @@ class Game:
     def __init__(self, screen_height, screen_width) -> None:
         self.width = 10
         self.height = 10
-        self.margin = 1
+        self.margin = 4
 
         self.rows = screen_height // (self.height + self.margin)
         self.columns = screen_width // (self.width + self.margin)
@@ -33,6 +37,7 @@ class Game:
         self.reset()
 
         self.decay_rate = 0.015
+        self.growth_rate = 0.005
 
     def evolve(self, grid=None):
         grid = grid or self.grid
@@ -55,22 +60,28 @@ class Game:
 
         # Décomposition
         nb_decompose = int(self.columns * self.rows * self.decay_rate)
-        indices_x = np.random.randint(0, self.grid.shape[0], nb_decompose)
-        indices_y = np.random.randint(0, self.grid.shape[1], nb_decompose)
-        new_grid[indices_x, indices_y] = 0
+        nb_grow = int(self.columns * self.rows * self.growth_rate)
+        decompose_x = np.random.randint(0, self.grid.shape[0], nb_decompose)
+        decompose_y = np.random.randint(0, self.grid.shape[1], nb_decompose)
+        new_grid[decompose_x, decompose_y] = 0
+
+        grow_x = np.random.randint(0, self.grid.shape[0], nb_grow)
+        grow_y = np.random.randint(0, self.grid.shape[1], nb_grow)
+        self.grow(new_grid, grow_x, grow_y)
 
         self.grid = new_grid
 
     @staticmethod
     def conway(neighbors, state):
-        if state == 0 and neighbors == 3:
-            new_state = 1
-        elif state == 1 and (neighbors < 2):
-            new_state = 0
-        elif state == 1 and (neighbors > 5):
-            new_state = 0
+        new_state = state
+        if state == 0:
+            if neighbors == 3:
+                new_state = 1
         else:
-            new_state = state
+            if neighbors < 2:
+                new_state = 0
+            elif neighbors > 3:
+                new_state = 0
         return new_state
 
     def render_tiles(self) -> List[Tile]:
@@ -78,8 +89,13 @@ class Game:
         for row in range(self.rows):
             for column in range(self.columns):
                 color = BLACK
-                if self.grid[column, row] == 1:
-                    color = WHITE
+                cell = self.grid[column, row]
+                if cell > 0:
+                    r, g, b = WHITE
+                    color = r, (g - cell), b
+                    # if cell > 0:
+                    # print(f"{cell} => {color}")
+
                 rect = [(self.margin + self.width) * column + self.margin,
                         (self.margin + self.height) * row + self.margin,
                         self.width, self.height]
@@ -98,8 +114,8 @@ class Game:
 
         if is_left or is_right:
             val = 1 if is_left else 0
-            self.grid[column, row] = val
-            print(f"Grid{column}x{row}={val}")
+            self.grow(self.grid, column, row)
+            print(f"Growth at {column}x{row} (->{val})")
 
     def random_seed(self):
         for i in range(self.columns):
@@ -110,18 +126,32 @@ class Game:
         self.grid = np.zeros((self.columns, self.rows))
         self.random_seed()
 
+    def grow(self, new_grid, grow_x, grow_y, val=1):
+        relative_coords = [[grow_x, grow_y],
+                           [grow_x + 1, grow_y],
+                           [grow_x, grow_y + 1],
+                           [grow_x + 1, grow_y + 1]]
+        for x, y in relative_coords:
+            try:
+                new_grid[x, y] = val
+            except IndexError:
+                pass
+
 
 class App:
+    running: bool = True
+    paused: bool = False
 
-    def __init__(self, width=1024, height=1024):
+    def __init__(self, width=300, height=None):
+        self.tick: int = 60
+        height = height or width
         self.clock: pg.time.Clock = pg.time.Clock()
         self.game = Game(width, height)
         self.display: pg.Surface = None
         self.background: pg.Surface = None
-        self.running = True
         self.size = self.width, self.height = width, height  # FIXME Accessors
 
-    def on_init(self):
+    def on_init(self, tick: int = None):
         pg.init()
         pg.display.set_caption("Data D3s3rt <3")
 
@@ -130,7 +160,8 @@ class App:
         self.background = self.background.convert()
         self.background.fill((170, 238, 187))
 
-        self.running = True
+        if tick:
+            self.tick = tick
 
     def on_event(self, event):
         if event.type == pg.QUIT \
@@ -141,11 +172,33 @@ class App:
             self.game.on_mouse(event)
         elif event.type == pg.MOUSEBUTTONUP:
             pass
-        elif event.type == pg.KEYDOWN and event.key == pg.K_r:
-            self.on_reset()
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_r:
+                self.on_reset()
+            if event.key == pg.K_p:
+                self.paused = not self.paused
+            elif event.key == pg.K_q:
+                self.game.growth_rate += 0.01
+                print(f"GROWTH+[{self.game.growth_rate}]")
+            elif event.key == pg.K_w:
+                self.game.growth_rate = max(0, self.game.growth_rate - 0.01)
+                print(f"GROWTH-[{self.game.growth_rate}]")
+            elif event.key == pg.K_a:
+                self.game.decay_rate += 0.01
+                print(f"DECAY+[{self.game.decay_rate}]")
+            elif event.key == pg.K_s:
+                self.game.decay_rate = max(0, self.game.decay_rate - 0.01)
+                print(f"DECAY-[{self.game.growth_rate}]")
+            elif event.key in [pg.K_EQUALS, pg.K_KP_EQUALS, pg.K_PLUS, pg.K_KP_PLUS]:
+                self.tick = min(MAX_FPS, self.tick + 1)
+            elif event.key in [pg.K_MINUS, pg.K_KP_MINUS, pg.K_UNKNOWN]:
+                self.tick = max(MIN_FPS, self.tick - 1)
+            else:
+                print(f"Unhandled key: {event.key}")
 
     def on_loop(self):
-        self.game.evolve()
+        if not self.paused:
+            self.game.evolve()
 
     def on_render(self):
         # self.display.blit(self.background, (0, 0))
@@ -160,11 +213,11 @@ class App:
     def on_cleanup(self):
         pg.quit()
 
-    def on_execute(self):
-        self.on_init()
+    def on_execute(self, tick=10):
+        self.on_init(tick)
 
         while self.running:
-            self.clock.tick(10)
+            self.clock.tick(self.tick)
             for event in pg.event.get():
                 self.on_event(event)
             self.on_loop()
@@ -176,6 +229,6 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App(256, 256)
-    app.on_execute()
+    app = App(512)
+    app.on_execute(3)
     print("DONE")
