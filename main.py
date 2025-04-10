@@ -145,12 +145,22 @@ PLANT_SPECIES = {
 }
 
 
+def species_by_name(species_name):
+    for key, species in PLANT_SPECIES.items():
+        if species.name.lower() == species_name.lower():
+            return species
+    raise ValueError(f"No specie named {species_name}")
+
+
 class Plant(Entity):
     """Plant entity with growth and reproduction behaviors"""
 
     def __init__(self, entity_id: int, position: Position, species_name: str):
         super().__init__(entity_id, position, EntityType.PLANT)
-        self.species = PLANT_SPECIES[species_name]
+        try:
+            self.species = PLANT_SPECIES[species_name]
+        except KeyError:
+            self.species = species_by_name(species_name)
         self.size = 1.0
         self.water_stored = 1.0
         self.health = 1.0
