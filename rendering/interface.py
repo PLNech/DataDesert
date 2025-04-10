@@ -93,8 +93,8 @@ class Interface:
     
     def _screen_to_grid(self, screen_pos: Tuple[int, int], world) -> Tuple[int, int]:
         """Convert screen coordinates to grid coordinates"""
-        # TODO This would need to account for any zoom or pan
-        # For simplicity, assuming 1:1 mapping initially
+        # Account for zoom level if implemented
+        # Currently using simple 1:1 mapping with sidebar consideration
         grid_width = (self.screen_width - 240) / world.width
         grid_height = self.screen_height / world.height
         
@@ -126,15 +126,19 @@ class Interface:
     def _place_plant(self, world, grid_x: int, grid_y: int) -> None:
         """Place a new plant in the world"""
         from models.base import Position
-        from models.plants import Plant
+        from models.plants import Plant, PLANT_SPECIES
         
         pos = Position(grid_x, grid_y)
         if not world.is_position_occupied(pos):
-            # TODO this only creates a random plant (SHOULD be based on selected plant type)
+            # Get the current selected plant type from tool_id
+            species_name = self.active_tool
+            if species_name not in PLANT_SPECIES:
+                species_name = "cactus"  # Default fallback
+                
             plant = Plant(
                 world.get_next_entity_id(),
                 pos,
-                species="cactus"  # Default, would be set based on UI selection
+                species=species_name
             )
             world.add_entity(plant)
             
@@ -245,4 +249,24 @@ class Interface:
     
     def update_analytics(self, metrics: Dict[str, float]) -> None:
         """Update the analytics panel with new metrics"""
-        self.ui_manager.analytics_panel.update_metrics(metrics) 
+        self.ui_manager.analytics_panel.update_metrics(metrics)
+    
+    def connect_controls(self, control_callbacks):
+        """Connect control panel buttons to callback functions"""
+        # Connect time controls
+        self.ui_manager.control_panel.time_slow = lambda: self.set_time_scale(0.5)
+        self.ui_manager.control_panel.time_pause = self.toggle_pause
+        self.ui_manager.control_panel.time_normal = lambda: self.set_time_scale(1.0)
+        self.ui_manager.control_panel.time_fast = lambda: self.set_time_scale(2.0)
+        
+        # Connect other controls
+        if 'reset' in control_callbacks:
+            self.ui_manager.control_panel.reset_world = control_callbacks['reset']
+        if 'zoom_in' in control_callbacks:
+            self.ui_manager.control_panel.zoom_in = control_callbacks['zoom_in']
+        if 'zoom_out' in control_callbacks:
+            self.ui_manager.control_panel.zoom_out = control_callbacks['zoom_out']
+        if 'fullscreen' in control_callbacks:
+            self.ui_manager.control_panel.toggle_fullscreen = control_callbacks['fullscreen']
+        if 'chaos' in control_callbacks:
+            self.ui_manager.control_panel.toggle_chaos = control_callbacks['chaos'] 

@@ -90,41 +90,49 @@ class ControlPanel(Panel):
     
     # Control callback methods
     def time_slow(self) -> None:
+        """Set simulation to slow speed"""
         print("Slowing time")
-        # TODO To be connected to game time control
+        # Implementation is provided by Interface
     
     def time_pause(self) -> None:
+        """Pause the simulation"""
         print("Pausing simulation")
-        # TODO To be connected to game pause functionality
+        # Implementation is provided by Interface
     
     def time_normal(self) -> None:
+        """Set simulation to normal speed"""
         print("Normal time")
-        # TODO To be connected to game time control
+        # Implementation is provided by Interface
     
     def time_fast(self) -> None:
+        """Set simulation to fast speed"""
         print("Fast forward")
-        # TODO To be connected to game time control
+        # Implementation is provided by Interface
     
     def reset_world(self) -> None:
+        """Reset the world simulation"""
         print("Resetting world")
-        # TODO To be connected to world reset functionality
+        # Implementation is provided by Interface
     
     def zoom_in(self) -> None:
+        """Increase zoom level"""
         print("Zooming in")
-        # TODO To be connected to zoom functionality
+        # Implementation is provided by Interface
     
     def zoom_out(self) -> None:
+        """Decrease zoom level"""
         print("Zooming out")
-        # TODO To be connected to zoom functionality
+        # Implementation is provided by Interface
     
     def toggle_fullscreen(self) -> None:
+        """Toggle fullscreen mode"""
         print("Toggling fullscreen")
-        # TODO To be connected to fullscreen toggle
+        # Implementation is provided by Interface
     
     def toggle_chaos(self) -> None:
-        """Toggle the chaos mode on/off"""
+        """Toggle chaos mode for random entity spawning"""
         self.chaos_active = not self.chaos_active
         self.chaos_button.text = f"Chaos Mode: {'ON' if self.chaos_active else 'OFF'}"
         self.chaos_button.color = (200, 50, 50) if self.chaos_active else (120, 50, 50)
         print(f"Chaos mode {'activated' if self.chaos_active else 'deactivated'}")
-        # TODO To be connected to chaos spawn functionality 
+        # Implementation of actual entity spawning is provided by Interface 

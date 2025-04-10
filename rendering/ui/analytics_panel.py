@@ -67,7 +67,13 @@ class AnalyticsPanel(Panel):
                 points.append((x, y))
             
             if len(points) > 1:
-                pg.draw.lines(surface, colors[metric], False, points, 2)
+                try:
+                    # Validate points before drawing
+                    valid_points = [(float(x), float(y)) for x, y in points]
+                    pg.draw.lines(surface, colors[metric], False, valid_points, 2)
+                except (TypeError, ValueError):
+                    # Skip drawing this line if there's an error
+                    print(f"Error drawing metric {metric}, invalid points detected")
         
         # Draw legend
         legend_y = self.graph_rect.top + 10

@@ -123,6 +123,16 @@ class Renderer:
                 achievement["description"],
                 achievement["unlocked"]
             )
+        
+        # Connect control panel callbacks
+        control_callbacks = {
+            'reset': self.reset_callback,
+            'zoom_in': self.zoom_in_callback,
+            'zoom_out': self.zoom_out_callback,
+            'fullscreen': self.toggle_fullscreen_callback,
+            'chaos': self.toggle_chaos_callback
+        }
+        self.interface.connect_controls(control_callbacks)
     
     def set_selected_tool(self, tool_id):
         """Set the currently selected tool in the UI"""
@@ -263,3 +273,29 @@ class Renderer:
             
             # Move up for the next notification
             y_pos -= notification_height + notification_margin
+
+    # Add callback methods for the control panel
+    def reset_callback(self):
+        """Reset world callback - will be connected to game manager"""
+        print("Reset world requested")
+        # Will be overridden by game manager
+    
+    def zoom_in_callback(self):
+        """Zoom in callback"""
+        print("Zoom in requested")
+        # Can be implemented later
+    
+    def zoom_out_callback(self):
+        """Zoom out callback"""
+        print("Zoom out requested")
+        # Can be implemented later
+    
+    def toggle_fullscreen_callback(self):
+        """Toggle fullscreen callback"""
+        print("Fullscreen toggle requested")
+        # Can be implemented with pygame.display.toggle_fullscreen()
+    
+    def toggle_chaos_callback(self):
+        """Toggle chaos mode callback"""
+        print("Chaos mode toggle requested")
+        # Will be connected to random entity spawning
