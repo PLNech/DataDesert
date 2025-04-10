@@ -7,6 +7,10 @@ alwaysApply: true
 
 # Python Development Best Practices Guide
 
+## Project Environment
+- **VirtualEnv**: We are running in a virtualenv located at ~/.virtualenvs/desert/bin/{python,activate} 
+- **Python Version** 3.13.1
+
 ## Project Structure
 - **Source Code**: Store all source code in a dedicated `src` directory.
 - **Tests**: Maintain a separate `tests` directory for all test cases.

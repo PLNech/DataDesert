@@ -135,8 +135,95 @@ class Animal(Entity):
 
     def _seek_water(self, world: 'World') -> None:
         """Move towards the nearest water source"""
-        # TODO: Implement water seeking using sense range and world water map
-        pass
+        # Get sense range based on animal trait
+        sense_range = int(self.dna.get_trait("sense_range") * 10)  # Scale to reasonable range
+        
+        # First, look for Water entities in range
+        water_entities = world.get_entities_in_radius(
+            self.position, sense_range, EntityType.WATER
+        )
+        
+        # If no water entities, look for high moisture areas
+        if not water_entities:
+            # Find the highest moisture cell within sense range
+            best_moisture = 0.0
+            target_pos = None
+            
+            for dx in range(-sense_range, sense_range + 1):
+                for dy in range(-sense_range, sense_range + 1):
+                    nx, ny = self.position.x + dx, self.position.y + dy
+                    
+                    # Check map boundaries
+                    if 0 <= nx < world.width and 0 <= ny < world.height:
+                        moisture = world.environment.moisture[nx, ny]
+                        
+                        # If this cell has higher moisture than what we've found
+                        if moisture > best_moisture and moisture > 0.3:  # Only consider significant moisture
+                            best_moisture = moisture
+                            target_pos = Position(nx, ny)
+            
+            if target_pos:
+                self._move_towards(world, target_pos)
+                return
+            
+            # If we didn't find any good moisture, just explore
+            self._explore(world)
+            return
+        
+        # Sort water entities by distance
+        water_entities.sort(key=lambda e: e.position.distance_to(self.position))
+        
+        # Move towards closest water
+        closest_water = water_entities[0]
+        self._move_towards(world, closest_water.position)
+        
+        # If we're at a water source, drink
+        if self.position.distance_to(closest_water.position) < 1.5:
+            self._drink_water(world, closest_water)
+    
+    def _move_towards(self, world: 'World', target_position: Position) -> None:
+        """Move towards a target position"""
+        dx = 0
+        dy = 0
+        
+        # Determine direction to move
+        if target_position.x > self.position.x:
+            dx = 1
+        elif target_position.x < self.position.x:
+            dx = -1
+            
+        if target_position.y > self.position.y:
+            dy = 1
+        elif target_position.y < self.position.y:
+            dy = -1
+        
+        # Try to move in the determined direction
+        if dx != 0 or dy != 0:
+            self._move(world, dx, dy)
+    
+    def _drink_water(self, world: 'World', water_entity) -> None:
+        """Drink from a water source"""
+        from models.water import Water
+        
+        # We can only drink from Water entities
+        if not isinstance(water_entity, Water):
+            # Drink from environmental moisture if at a moist location
+            moisture = world.environment.moisture[self.position.x, self.position.y]
+            if moisture > 0.5:
+                # Drink from the environment
+                self.water = min(100.0, self.water + moisture * 20.0)
+                # Consume some of the moisture
+                world.environment.moisture[self.position.x, self.position.y] -= min(
+                    moisture, 0.2
+                )
+            return
+        
+        # Gain water based on water entity size
+        water_gain = water_entity.size * 10.0
+        self.water = min(100.0, self.water + water_gain)
+        
+        # Reduce water entity size slightly (animals drinking)
+        water_entity.size = max(0.1, water_entity.size - 0.05)
 
     def _seek_food(self, world: 'World') -> None:
         """Move towards food appropriate for this animal's type"""

@@ -4,6 +4,7 @@ import numpy as np
 from models.base import Entity, EntityType, Position
 from models.environment import Environment
 from models.plants import Plant, PLANT_SPECIES
+from models.water import Water
 
 
 class World:
@@ -25,6 +26,7 @@ class World:
             "plant_count": [],
             "herbivore_count": [],
             "carnivore_count": [],
+            "water_count": [],  # Add water entity count tracking
             "avg_plant_size": [],
             "avg_herbivore_energy": [],
             "avg_carnivore_energy": [],
@@ -32,6 +34,24 @@ class World:
             "avg_nutrients": [],
         }
         self.time_step = 0
+        
+        # Create water entities at oasis positions
+        self._create_water_entities()
+
+    def _create_water_entities(self):
+        """Create water entities at the oasis positions in the environment"""
+        for x, y in self.environment.oasis_positions:
+            # Create a water entity at each oasis center
+            position = Position(x, y)
+            
+            # Skip if position is already occupied
+            if self.is_position_occupied(position):
+                continue
+                
+            # Create water entity with size based on moisture
+            size = min(5.0, self.environment.moisture[x, y] * 5.0)
+            water = Water(self.get_next_entity_id(), position, size=max(1.0, size))
+            self.add_entity(water)
 
     def update(self) -> None:
         """Update the world state for one time step"""
@@ -75,11 +95,13 @@ class World:
         plants = [e for e in self.entities.values() if e.entity_type == EntityType.PLANT]
         herbivores = [e for e in self.entities.values() if e.entity_type == EntityType.HERBIVORE]
         carnivores = [e for e in self.entities.values() if e.entity_type == EntityType.CARNIVORE]
+        waters = [e for e in self.entities.values() if e.entity_type == EntityType.WATER]
 
         self.metrics["time"].append(self.time_step)
         self.metrics["plant_count"].append(len(plants))
         self.metrics["herbivore_count"].append(len(herbivores))
         self.metrics["carnivore_count"].append(len(carnivores))
+        self.metrics["water_count"].append(len(waters))
 
         self.metrics["avg_plant_size"].append(
             np.mean([p.size for p in plants]) if plants else 0

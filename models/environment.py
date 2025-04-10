@@ -1,4 +1,5 @@
 import numpy as np
+from models.base import Position, EntityType
 
 
 class Environment:
@@ -19,14 +20,20 @@ class Environment:
         self.wind_direction = 0  # Radians
         self.wind_strength = 0.2  # 0-1 scale
 
+        # Oasis positions for tracking
+        self.oasis_positions = []
+
         # Create some initial water sources (oases)
         self._create_oases()
 
     def _create_oases(self, num_oases: int = 3) -> None:
         """Create initial water sources"""
+        self.oasis_positions = []
+        
         for _ in range(num_oases):
             x = np.random.randint(0, self.width)
             y = np.random.randint(0, self.height)
+            self.oasis_positions.append((x, y))
 
             # Create a small area with high moisture
             radius = np.random.randint(3, 8)
