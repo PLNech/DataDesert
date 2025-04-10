@@ -1,0 +1,24 @@
+# Configuration constants for the DataDesert simulation
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 1000
+MAX_FPS = 60
+MIN_FPS = 5
+
+# Colors
+BLACK = (8, 8, 8)
+WHITE = (255, 255, 255)
+GREY = (50, 50, 50)
+GREEN = (20, 200, 50)
+BLUE = (50, 50, 200)
+YELLOW = (200, 200, 50)
+RED = (200, 50, 50)
+
+# Simulation constants
+DEFAULT_SEED_RATE = 0.15
+DEFAULT_DECAY_RATE = 0.015
+DEFAULT_GROWTH_RATE = 0.0005
+CELL_WIDTH = 10
+CELL_HEIGHT = 10
+CELL_MARGIN = 2
+
+
