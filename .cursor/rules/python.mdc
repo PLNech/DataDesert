@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Python Projects Guide
+
+# Python Development Best Practices Guide
+
+## Project Structure
+- **Source Code**: Store all source code in a dedicated `src` directory.
+- **Tests**: Maintain a separate `tests` directory for all test cases.
+- **Docs**: Use a `docs` directory for documentation files.
+- **Config**: Keep configuration files in a `config` directory.
+
+## Modular Design
+- **Models**: Separate models into distinct files within the `src/models` directory.
+- **Services**: Implement services in the `src/services` directory.
+- **Controllers**: Place controllers in the `src/controllers` directory.
+- **Utilities**: Store utility functions in the `src/utils` directory.
+
+## Configuration Management
+- Use environment variables for configuration management.
+- Store sensitive information in `.env` files and load them using libraries like `python-dotenv`.
+
+## Error Handling and Logging
+- Implement robust error handling with try/except blocks.
+- Capture context in logs for better debugging.
+- Use structured logging with libraries like `structlog`.
+
+## Testing
+- Write comprehensive tests using `pytest`.
+- Ensure test coverage is at least 80%.
+- Use fixtures and parametrize tests for better coverage.
+
+## Documentation
+- Use docstrings for all functions and classes.
+- Maintain a detailed `README.md` file in the root directory.
+- Include both English and Chinese versions of the `README.md` file.
+
+## Dependency Management
+- Manage dependencies using `rye` from https://github.com/astral-sh/rye.
+- Use virtual environments to isolate dependencies.
+
+## Code Style
+- Ensure code style consistency using `Ruff`.
+- Follow PEP 8 guidelines for code formatting.
+
+## CI/CD
+- Implement CI/CD pipelines using GitHub Actions or GitLab CI.
+- Automate testing, linting, and deployment processes.
+
+## AI-Friendly Coding Practices
+- Use descriptive variable and function names.
+- Include type hints for better code clarity.
+- Add detailed comments for complex logic.
+- Provide rich error context for easier debugging.
+
+By following these best practices, you can ensure that your Python projects are well-structured, maintainable, and optimized for AI-assisted development.
