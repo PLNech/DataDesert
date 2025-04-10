@@ -1,1 +1,46 @@
 .idea/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+*.so
+*.dylib
+*.o
+*.out
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+.idea/
+.vscode/
+*.env
+*.venv
+*.virtualenv
+*.pytest_cache/
+*.coverage
+*.mypy_cache/
+*.pytest_cache/
+*.ipynb_checkpoints
+# PyGame specific
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+# Numpy specific
+*.npy
+*.npz
+# Numba specific
+*.npy
+# Compiled files
+*.c
+*.cpp
+# Other
+*.bak
+*.orig
