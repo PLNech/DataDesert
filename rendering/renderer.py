@@ -4,7 +4,7 @@ import pygame as pg
 from models.base import EntityType
 from simulation.analytics import Analytics
 from simulation.world import World
-from rendering.ui import UIManager
+from rendering.interface import Interface
 
 
 class Renderer:
@@ -31,8 +31,8 @@ class Renderer:
         self.font = pg.font.SysFont('Arial', 18)
         self.notification_font = pg.font.SysFont('Arial', 16)
         
-        # UI Manager
-        self.ui_manager = UIManager(width, height)
+        # Initialize Interface instead of UIManager
+        self.interface = Interface(width, height)
 
     def render(self, world: World, analytics: Analytics = None, notifications = None) -> None:
         """Render the current state of the world"""
@@ -52,32 +52,91 @@ class Renderer:
         if notifications:
             self._render_notifications(notifications)
             
+        # Update interface with world metrics
+        if world.metrics:
+            self.interface.update(world)
+            
         # Render UI elements
-        self.ui_manager.draw(self.display)
+        self.interface.draw(self.display)
 
         # Update display
         pg.display.update()
         
     def update_ui(self, mouse_pos):
         """Update UI elements based on mouse position"""
-        self.ui_manager.update(mouse_pos)
+        # No need to explicitly update mouse position in new interface
+        pass
         
     def handle_ui_event(self, event):
         """Handle UI events"""
-        return self.ui_manager.handle_event(event)
+        return self.interface.handle_event(event, None)  # Pass None for world, will be updated in render
     
     def initialize_ui(self, available_tools, select_tool_callback, achievements):
         """Initialize UI with available tools and achievements"""
-        self.ui_manager.initialize_tools(available_tools, select_tool_callback)
-        self.ui_manager.update_achievements(achievements)
+        # Map available tools to the new interface's tool system
+        for tool_type, tools in available_tools.items():
+            if not tools:
+                continue
+                
+            if tool_type == "plants":
+                self.interface.add_tool(
+                    "Cactus", "cactus", 
+                    lambda: select_tool_callback("cactus"),
+                    "Drought-resistant, slow growing"
+                )
+                self.interface.add_tool(
+                    "Desert Grass", "desert_grass", 
+                    lambda: select_tool_callback("desert_grass"),
+                    "Fast growing, needs more water"
+                )
+                self.interface.add_tool(
+                    "Succulent", "succulent", 
+                    lambda: select_tool_callback("succulent"),
+                    "Stores water, moderate growth"
+                )
+            
+            elif tool_type == "water":
+                self.interface.add_tool(
+                    "Water Source", "water", 
+                    lambda: select_tool_callback("water"),
+                    "Creates permanent water source"
+                )
+            
+            elif tool_type == "herbivores":
+                self.interface.add_tool(
+                    "Herbivore", "herbivore", 
+                    lambda: select_tool_callback("herbivore"),
+                    "Plant eater, needs water"
+                )
+            
+            elif tool_type == "carnivores":
+                self.interface.add_tool(
+                    "Carnivore", "carnivore", 
+                    lambda: select_tool_callback("carnivore"),
+                    "Hunts herbivores, needs water"
+                )
+        
+        # Initialize achievements
+        for achievement in achievements.values():
+            self.interface.add_achievement(
+                achievement["title"],
+                achievement["description"],
+                achievement["unlocked"]
+            )
     
     def set_selected_tool(self, tool_id):
         """Set the currently selected tool in the UI"""
-        self.ui_manager.set_selected_tool(tool_id)
+        self.interface.set_active_tool(tool_id)
     
     def update_achievements(self, achievements):
         """Update the achievements display"""
-        self.ui_manager.update_achievements(achievements)
+        # Clear existing achievements (this should be handled by the interface)
+        for achievement in achievements.values():
+            self.interface.add_achievement(
+                achievement["title"],
+                achievement["description"],
+                achievement["unlocked"]
+            )
 
     def _render_environment(self, world: World) -> None:
         """Render environmental factors like moisture levels"""
