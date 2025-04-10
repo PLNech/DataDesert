@@ -190,7 +190,7 @@ class UIManager:
     def select_cell(self, cell_pos: Tuple[int, int]) -> None:
         """Handle cell selection in the game grid"""
         self.selected_cell = cell_pos
-        # Further logic would obtain entity/environment info and update the cell info panel
+        # TODO Further logic must obtain entity/environment info and update the cell info panel
     
     def resize(self, screen_width: int, screen_height: int) -> None:
         """Recalculate UI layout when screen is resized"""

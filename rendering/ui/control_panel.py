@@ -91,35 +91,35 @@ class ControlPanel(Panel):
     # Control callback methods
     def time_slow(self) -> None:
         print("Slowing time")
-        # To be connected to game time control
+        # TODO To be connected to game time control
     
     def time_pause(self) -> None:
         print("Pausing simulation")
-        # To be connected to game pause functionality
+        # TODO To be connected to game pause functionality
     
     def time_normal(self) -> None:
         print("Normal time")
-        # To be connected to game time control
+        # TODO To be connected to game time control
     
     def time_fast(self) -> None:
         print("Fast forward")
-        # To be connected to game time control
+        # TODO To be connected to game time control
     
     def reset_world(self) -> None:
         print("Resetting world")
-        # To be connected to world reset functionality
+        # TODO To be connected to world reset functionality
     
     def zoom_in(self) -> None:
         print("Zooming in")
-        # To be connected to zoom functionality
+        # TODO To be connected to zoom functionality
     
     def zoom_out(self) -> None:
         print("Zooming out")
-        # To be connected to zoom functionality
+        # TODO To be connected to zoom functionality
     
     def toggle_fullscreen(self) -> None:
         print("Toggling fullscreen")
-        # To be connected to fullscreen toggle
+        # TODO To be connected to fullscreen toggle
     
     def toggle_chaos(self) -> None:
         """Toggle the chaos mode on/off"""
@@ -127,4 +127,4 @@ class ControlPanel(Panel):
         self.chaos_button.text = f"Chaos Mode: {'ON' if self.chaos_active else 'OFF'}"
         self.chaos_button.color = (200, 50, 50) if self.chaos_active else (120, 50, 50)
         print(f"Chaos mode {'activated' if self.chaos_active else 'deactivated'}")
-        # To be connected to chaos spawn functionality 
+        # TODO To be connected to chaos spawn functionality 

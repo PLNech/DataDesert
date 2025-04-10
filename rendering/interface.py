@@ -93,7 +93,7 @@ class Interface:
     
     def _screen_to_grid(self, screen_pos: Tuple[int, int], world) -> Tuple[int, int]:
         """Convert screen coordinates to grid coordinates"""
-        # This would need to account for any zoom or pan
+        # TODO This would need to account for any zoom or pan
         # For simplicity, assuming 1:1 mapping initially
         grid_width = (self.screen_width - 240) / world.width
         grid_height = self.screen_height / world.height
@@ -130,7 +130,7 @@ class Interface:
         
         pos = Position(grid_x, grid_y)
         if not world.is_position_occupied(pos):
-            # Create a random plant (would be based on selected plant type)
+            # TODO this only creates a random plant (SHOULD be based on selected plant type)
             plant = Plant(
                 world.get_next_entity_id(),
                 pos,
