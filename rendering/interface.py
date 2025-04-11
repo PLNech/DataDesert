@@ -11,6 +11,18 @@ class Interface:
         """Initialize the interface with screen dimensions"""
         self.screen_width = screen_width
         self.screen_height = screen_height
+        
+        # Desert theme colors
+        self.colors = {
+            'sand_light': (245, 233, 208),
+            'sand_medium': (232, 208, 170),
+            'sand_dark': (217, 177, 102),
+            'cactus_light': (182, 135, 90),
+            'cactus_dark': (138, 71, 42),
+            'fig': (88, 62, 35),
+            'accent': (181, 106, 37)
+        }
+        
         self.ui_manager = UIManager(screen_width, screen_height)
         self.active_tool = None
         self.current_entity_to_place = None
@@ -253,11 +265,11 @@ class Interface:
     
     def connect_controls(self, control_callbacks):
         """Connect control panel buttons to callback functions"""
-        # Connect time controls
-        self.ui_manager.control_panel.time_slow = lambda: self.set_time_scale(0.5)
-        self.ui_manager.control_panel.time_pause = self.toggle_pause
-        self.ui_manager.control_panel.time_normal = lambda: self.set_time_scale(1.0)
-        self.ui_manager.control_panel.time_fast = lambda: self.set_time_scale(2.0)
+        # Connect time controls that will actually call our time scale methods
+        self.ui_manager.control_panel.time_slow = lambda: self._set_time_scale(0.5)
+        self.ui_manager.control_panel.time_pause = lambda: self._toggle_pause()
+        self.ui_manager.control_panel.time_normal = lambda: self._set_time_scale(1.0)
+        self.ui_manager.control_panel.time_fast = lambda: self._set_time_scale(2.0)
         
         # Connect other controls
         if 'reset' in control_callbacks:
@@ -269,4 +281,17 @@ class Interface:
         if 'fullscreen' in control_callbacks:
             self.ui_manager.control_panel.toggle_fullscreen = control_callbacks['fullscreen']
         if 'chaos' in control_callbacks:
-            self.ui_manager.control_panel.toggle_chaos = control_callbacks['chaos'] 
+            self.ui_manager.control_panel.toggle_chaos = control_callbacks['chaos']
+
+    def _set_time_scale(self, scale: float) -> None:
+        """Set simulation time scale and update UI to reflect this"""
+        self.time_scale = scale
+        self.paused = False
+        # Update UI to show active state for this button
+        self.ui_manager.control_panel.update_speed_buttons(scale)
+
+    def _toggle_pause(self) -> None:
+        """Toggle pause state and update UI to reflect this"""
+        self.paused = not self.paused
+        # Update UI to show pause state
+        self.ui_manager.control_panel.update_pause_button(self.paused) 

@@ -34,18 +34,19 @@ class AnalyticsPanel(Panel):
         if not self.visible or not self.metrics:
             return
             
-        # Define colors for different metrics
+        # Define colors for different metrics using desert theme
         colors = {
-            "plant_count": (100, 200, 100),
-            "herbivore_count": (200, 150, 100),
-            "carnivore_count": (200, 100, 100),
-            "water_count": (100, 100, 200),
-            "avg_moisture": (100, 150, 255),
-            "avg_nutrients": (150, 200, 100)
+            "plant_count": (138, 171, 71),      # Cactus green
+            "herbivore_count": (217, 177, 102), # Sand
+            "carnivore_count": (181, 106, 37),  # Fig brown
+            "water_count": (100, 150, 255),     # Blue
+            "avg_moisture": (150, 200, 255),    # Light blue
+            "avg_nutrients": (172, 125, 96)     # Brown
         }
         
-        # Draw graph background
-        pg.draw.rect(surface, (50, 50, 50), self.graph_rect)
+        # Draw graph background - more visible with desert theme
+        pg.draw.rect(surface, (230, 220, 200), self.graph_rect, border_radius=5)
+        pg.draw.rect(surface, (172, 125, 96), self.graph_rect, width=1, border_radius=5)
         
         # Draw lines for each metric
         metrics_to_show = [m for m in colors.keys() if m in self.metrics and len(self.metrics[m]) > 1]
@@ -75,16 +76,15 @@ class AnalyticsPanel(Panel):
                     # Skip drawing this line if there's an error
                     print(f"Error drawing metric {metric}, invalid points detected")
         
-        # Draw legend
+        # Draw legend with proper font
         legend_y = self.graph_rect.top + 10
         for metric in metrics_to_show:
             # Draw color indicator
             pg.draw.rect(surface, colors[metric], 
-                        (self.graph_rect.left + 5, legend_y, 10, 10))
+                        (self.graph_rect.left + 5, legend_y, 12, 12))
             
-            # Draw metric name
-            font = pg.font.SysFont('Arial', 12)
-            text = font.render(metric.replace('_', ' ').title(), True, (220, 220, 220))
-            surface.blit(text, (self.graph_rect.left + 20, legend_y))
+            # Draw metric name with our proper font
+            text = self.font.render(metric.replace('_', ' ').title(), True, (88, 62, 35))
+            surface.blit(text, (self.graph_rect.left + 22, legend_y))
             
-            legend_y += 20 
+            legend_y += 25  # Increased spacing for better readability 

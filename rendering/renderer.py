@@ -13,9 +13,9 @@ class Renderer:
     def __init__(self, width: int, height: int):
         self.width = width
         self.height = height
-        self.cell_width = CELL_WIDTH
-        self.cell_height = CELL_HEIGHT
-        self.cell_margin = CELL_MARGIN
+        self.base_cell_width = CELL_WIDTH
+        self.base_cell_height = CELL_HEIGHT
+        self.base_cell_margin = CELL_MARGIN
 
         # Initialize pygame
         pg.init()
@@ -33,6 +33,15 @@ class Renderer:
         
         # Initialize Interface instead of UIManager
         self.interface = Interface(width, height)
+
+        # Initialize zoom controller
+        from rendering.ui.zoom_controller import ZoomController
+        self.zoom_controller = ZoomController()
+        self.cell_width, self.cell_height, self.cell_margin = self.zoom_controller.get_cell_dimensions(
+            self.base_cell_width, self.base_cell_height, self.base_cell_margin)
+
+        # Add fullscreen attribute
+        self.is_fullscreen = False
 
     def render(self, world: World, analytics: Analytics = None, notifications = None) -> None:
         """Render the current state of the world"""
@@ -282,18 +291,39 @@ class Renderer:
     
     def zoom_in_callback(self):
         """Zoom in callback"""
-        print("Zoom in requested")
-        # Can be implemented later
+        print("Zooming out...")
+        self.zoom_controller.zoom_in()
+        self.cell_width, self.cell_height, self.cell_margin = self.zoom_controller.get_cell_dimensions(
+            self.base_cell_width, self.base_cell_height, self.base_cell_margin)
     
     def zoom_out_callback(self):
         """Zoom out callback"""
-        print("Zoom out requested")
-        # Can be implemented later
+        self.zoom_controller.zoom_out()
+        self.cell_width, self.cell_height, self.cell_margin = self.zoom_controller.get_cell_dimensions(
+            self.base_cell_width, self.base_cell_height, self.base_cell_margin)
     
     def toggle_fullscreen_callback(self):
         """Toggle fullscreen callback"""
-        print("Fullscreen toggle requested")
-        # Can be implemented with pygame.display.toggle_fullscreen()
+        # Store current dimensions
+        current_w, current_h = self.display.get_size()
+        
+        # Toggle fullscreen using pygame's built-in function
+        pg.display.toggle_fullscreen()
+        
+        # If that doesn't work well on this platform, try this alternative method:
+        if self.is_fullscreen:
+            self.display = pg.display.set_mode(
+                (current_w, current_h), 
+                pg.HWSURFACE | pg.DOUBLEBUF
+            )
+        else:
+            self.display = pg.display.set_mode(
+                (current_w, current_h), 
+                pg.FULLSCREEN | pg.HWSURFACE | pg.DOUBLEBUF
+            )
+        
+        # Toggle state
+        self.is_fullscreen = not self.is_fullscreen
     
     def toggle_chaos_callback(self):
         """Toggle chaos mode callback"""

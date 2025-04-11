@@ -136,3 +136,22 @@ class ControlPanel(Panel):
         self.chaos_button.color = (200, 50, 50) if self.chaos_active else (120, 50, 50)
         print(f"Chaos mode {'activated' if self.chaos_active else 'deactivated'}")
         # Implementation of actual entity spawning is provided by Interface 
+
+    def update_speed_buttons(self, active_speed: float) -> None:
+        """Update the speed buttons to reflect current speed"""
+        # Reset all button states
+        self.speed_slow_selected = False
+        self.speed_normal_selected = False
+        self.speed_fast_selected = False
+        
+        # Set the active button
+        if active_speed == 0.5:
+            self.speed_slow_selected = True
+        elif active_speed == 1.0:
+            self.speed_normal_selected = True
+        elif active_speed == 2.0:
+            self.speed_fast_selected = True
+
+    def update_pause_button(self, is_paused: bool) -> None:
+        """Update the pause button to reflect current pause state"""
+        self.pause_selected = is_paused 

@@ -1,0 +1,72 @@
+{
+    "defaults": {
+        "colours": {
+            "normal_bg": "#E8D0AA",
+            "hovered_bg": "#D9B166",
+            "disabled_bg": "#CCB891",
+            "selected_bg": "#B6875A",
+            "dark_bg": "#AC7D60",
+            "normal_text": "#583E23",
+            "hovered_text": "#3E2C17",
+            "selected_text": "#000000",
+            "disabled_text": "#8A785A",
+            "link_text": "#6A3E14",
+            "link_hover": "#94561D",
+            "link_selected": "#B56A25",
+            "text_shadow": "#00000022",
+            "normal_border": "#AC7D60",
+            "hovered_border": "#8A665A",
+            "disabled_border": "#B6998E",
+            "selected_border": "#8A472A",
+            "active_border": "#94561D",
+            "filled_bar": "#8A472A",
+            "unfilled_bar": "#E8D0AA"
+        },
+        "font": {
+            "name": "cedarville",
+            "size": "18",
+            "regular_path": "fonts/cedarville.ttf"
+        }
+    },
+    "button": {
+        "colours": {
+            "normal_bg": "#D9B166",
+            "hovered_bg": "#B6875A",
+            "disabled_bg": "#CCB891",
+            "selected_bg": "#94561D",
+            "active_bg": "#8A472A",
+            "normal_text": "#3E2C17",
+            "hovered_text": "#000000",
+            "selected_text": "#FFFFFF",
+            "disabled_text": "#8A785A",
+            "active_text": "#FFFFFF",
+            "normal_border": "#8A472A",
+            "hovered_border": "#6A3E14",
+            "disabled_border": "#B6998E",
+            "selected_border": "#583E23",
+            "active_border": "#3E2C17"
+        },
+        "misc": {
+            "shape": "rounded_rectangle",
+            "border_width": "2",
+            "shadow_width": "2",
+            "shape_corner_radius": "8",
+            "text_horiz_alignment": "center",
+            "text_vert_alignment": "center"
+        }
+    },
+    "panel": {
+        "colours": {
+            "normal_bg": "#F5E9D0",
+            "hovered_bg": "#E8D0AA",
+            "disabled_bg": "#CCB891",
+            "selected_bg": "#D9B166"
+        },
+        "misc": {
+            "shape": "rounded_rectangle",
+            "border_width": "2",
+            "shadow_width": "2",
+            "shape_corner_radius": "10"
+        }
+    }
+} 

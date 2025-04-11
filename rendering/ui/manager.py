@@ -6,6 +6,8 @@ from .achievement_panel import AchievementPanel
 from .analytics_panel import AnalyticsPanel
 from .control_panel import ControlPanel
 from .cell_info_panel import CellInfoPanel
+import pygame_gui as pg_gui
+import os
 
 class UIManager:
     """Manages all UI elements and tabbed interface"""
@@ -14,11 +16,23 @@ class UIManager:
         self.screen_width = screen_width
         self.screen_height = screen_height
         
-        # Calculate panel dimensions
-        sidebar_width = 240
-        tab_height = 30
-        control_height = 130
-        cell_info_height = 180
+        # Initialize pygame_gui manager with desert theme
+        # Always use absolute path for theme loading
+        theme_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
+                                'assets', 'themes', 'desert_theme.json')
+        
+        # Check if theme file exists, otherwise use default theme
+        if os.path.exists(theme_path):
+            self.manager = pg_gui.UIManager((screen_width, screen_height), theme_path)
+        else:
+            print(f"Warning: Theme file not found at {theme_path}, using default theme")
+            self.manager = pg_gui.UIManager((screen_width, screen_height))
+        
+        # Calculate panel dimensions - increased sizes
+        sidebar_width = 280  # Increased from 240
+        tab_height = 40      # Increased from 30
+        control_height = 160 # Increased from 130
+        cell_info_height = 200 # Increased from 180
         
         # Create UI rectangles
         self.sidebar_rect = pg.Rect(
@@ -198,10 +212,10 @@ class UIManager:
         self.screen_height = screen_height
         
         # Recalculate panel dimensions
-        sidebar_width = 240
-        tab_height = 30
-        control_height = 130
-        cell_info_height = 180
+        sidebar_width = 280
+        tab_height = 40
+        control_height = 160
+        cell_info_height = 200
         
         # Update UI rectangles
         self.sidebar_rect = pg.Rect(
