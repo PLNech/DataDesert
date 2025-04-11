@@ -272,8 +272,19 @@ class Interface:
         self.ui_manager.control_panel.update_pause_button(self.paused)
     
     def toggle_pause(self) -> None:
-        """Toggle pause state"""
-        self.paused = not self.paused
+        """Toggle pause state and update UI to reflect this"""
+        # Check if we have an external pause toggle callback
+        if 'toggle_pause' in self.control_callbacks:
+            # Let the GameManager handle the pause toggle and get the new state
+            new_paused_state = self.control_callbacks['toggle_pause']()
+            # Update our internal state to match
+            self.paused = new_paused_state
+        else:
+            # Fallback to internal toggle if no callback provided
+            self.paused = not self.paused
+            
+        # Always update UI to show pause state
+        self.ui_manager.control_panel.update_pause_button(self.paused)
     
     def is_paused(self) -> bool:
         """Check if simulation is paused"""
@@ -344,10 +355,13 @@ class Interface:
         """Toggle pause state and update UI to reflect this"""
         # Check if we have an external pause toggle callback
         if 'toggle_pause' in self.control_callbacks:
-            # Let the GameManager handle the pause toggle
-            self.control_callbacks['toggle_pause']()
+            # Let the GameManager handle the pause toggle and get the new state
+            new_paused_state = self.control_callbacks['toggle_pause']()
+            # Update our internal state to match
+            self.paused = new_paused_state
         else:
             # Fallback to internal toggle if no callback provided
             self.paused = not self.paused
-            # Update UI to show pause state
-            self.ui_manager.control_panel.update_pause_button(self.paused) 
+            
+        # Always update UI to show pause state
+        self.ui_manager.control_panel.update_pause_button(self.paused) 

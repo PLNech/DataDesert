@@ -192,8 +192,9 @@ class GameManager:
             self.running = False
         elif event.key == pg.K_SPACE:
             self.toggle_pause()
-        elif event.key == pg.K_r:
-            self._reset_world()
+        elif event.key == pg.K_QUESTION or event.key == pg.K_SLASH:  # '?' key
+            self.renderer.interface.ui_manager.help_modal.toggle()
+            self.add_notification("Toggled help menu")
         elif event.key == pg.K_EQUALS or event.key == pg.K_PLUS:
             self.tick_rate = min(MAX_FPS, self.tick_rate + 5)
             self.add_notification(f"Speed: {self.tick_rate} FPS")

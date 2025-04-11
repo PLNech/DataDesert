@@ -21,7 +21,9 @@ class Renderer:
         # Initialize pygame
         pg.init()
         self.display = pg.display.set_mode((width, height), pg.HWSURFACE | pg.DOUBLEBUF)
-        pg.display.set_caption("DataDesert v2")
+        pg.display.set_caption("DataDesert")
+        icon_surface = pg.image.load('./assets/icon.png')
+        pg.display.set_icon(icon_surface)
 
         # Create surfaces
         self.background = pg.Surface(self.display.get_size())

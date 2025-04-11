@@ -9,6 +9,7 @@ class ControlPanel(Panel):
     def __init__(self, rect: pg.Rect):
         super().__init__(rect, title="Controls")
         self.buttons: List[Button] = []
+        self.pause_selected = False  # Track pause state
         self.setup_buttons()
     
     def setup_buttons(self) -> None:
@@ -161,4 +162,9 @@ class ControlPanel(Panel):
 
     def update_pause_button(self, is_paused: bool) -> None:
         """Update the pause button to reflect current pause state"""
-        self.pause_selected = is_paused 
+        self.pause_selected = is_paused
+        # Find the pause button and update its appearance
+        for button in self.buttons:
+            if hasattr(button, 'control_id') and button.control_id == 'time_||':
+                button.color = (200, 50, 50) if is_paused else (120, 120, 120)
+                break 

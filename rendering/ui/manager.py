@@ -8,6 +8,7 @@ from .control_panel import ControlPanel
 from .cell_info_panel import CellInfoPanel
 import pygame_gui as pg_gui
 import os
+from .help_modal import HelpModal
 
 class UIManager:
     """Manages all UI elements and tabbed interface"""
@@ -79,6 +80,9 @@ class UIManager:
         
         # Cell selection
         self.selected_cell = None
+        
+        # Initialize help modal
+        self.help_modal = HelpModal(screen_width, screen_height)
     
     def setup_tabs(self) -> None:
         """Initialize tab buttons"""
@@ -140,9 +144,20 @@ class UIManager:
         # Draw fixed panels
         self.control_panel.draw(surface)
         self.cell_info_panel.draw(surface)
+        
+        # Draw help modal on top if visible
+        self.help_modal.draw(surface)
     
     def handle_event(self, event: pg.event.Event) -> bool:
         """Process events for all UI elements"""
+        # First check if help modal should handle the event
+        if self.help_modal.handle_event(event):
+            return True
+            
+        # If help modal is visible, don't process other UI events
+        if self.help_modal.visible:
+            return True
+            
         # Handle tab buttons
         for i, tab in enumerate(self.tabs):
             if tab.handle_event(event):
