@@ -1,6 +1,10 @@
 # DataDesert V2
 >A dynamic ecosystem simulator that evolves over time, featuring multiple organism types, environmental systems, and a progression system.
 
+## Video
+https://github.com/user-attachments/assets/5d3254b4-3e20-4d49-b31b-9958ff1ccc9d
+
+
 ## Setup
 Based on NumPy and PyGame:
 - `pip install -r requirements.txt`
@@ -22,6 +26,3 @@ Based on NumPy and PyGame:
 - `[T]` selects the carnivore tool (unlocked after reaching herbivore thresholds)
 - `[Y]` creates rain (unlocked after reaching time milestones)
 - `[U]` creates a water source (unlocked after reaching specific conditions)
-
-## Video
-[Insert Video Here]
