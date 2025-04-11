@@ -3,6 +3,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 import numpy as np
 
 from simulation.world import World
+from models.base import EntityType
 import pandas as pd
 
 
@@ -15,13 +16,43 @@ class Analytics:
 
     def update(self) -> None:
         """Update analytics data from the world"""
-        # Convert metrics dict to DataFrame
-        self.df = pd.DataFrame(self.world.metrics)
+        # Create a new DataFrame row for the current time step
+        current_metrics = {
+            "time": self.world.time_step,
+            "plant_count": len([e for e in self.world.entities.values() if e.entity_type == EntityType.PLANT]),
+            "herbivore_count": len([e for e in self.world.entities.values() if e.entity_type == EntityType.HERBIVORE]),
+            "carnivore_count": len([e for e in self.world.entities.values() if e.entity_type == EntityType.CARNIVORE]),
+            "water_count": len([e for e in self.world.entities.values() if e.entity_type == EntityType.WATER]),
+            "avg_plant_size": 0.0,
+            "avg_herbivore_energy": 0.0,
+            "avg_carnivore_energy": 0.0,
+            "avg_moisture": float(np.mean(self.world.environment.moisture)),
+            "avg_nutrients": float(np.mean(self.world.environment.nutrients))
+        }
+        
+        # Calculate averages if entities exist
+        plants = [e for e in self.world.entities.values() if e.entity_type == EntityType.PLANT]
+        if plants:
+            current_metrics["avg_plant_size"] = float(np.mean([p.size for p in plants]))
+            
+        herbivores = [e for e in self.world.entities.values() if e.entity_type == EntityType.HERBIVORE]
+        if herbivores:
+            current_metrics["avg_herbivore_energy"] = float(np.mean([h.energy for h in herbivores]))
+            
+        carnivores = [e for e in self.world.entities.values() if e.entity_type == EntityType.CARNIVORE]
+        if carnivores:
+            current_metrics["avg_carnivore_energy"] = float(np.mean([c.energy for c in carnivores]))
+        
+        # Add the row to the DataFrame
+        if self.df.empty:
+            self.df = pd.DataFrame([current_metrics])
+        else:
+            self.df = pd.concat([self.df, pd.DataFrame([current_metrics])], ignore_index=True)
 
     def get_biodiversity_index(self) -> float:
         """Calculate a simple biodiversity index"""
         if self.df.empty:
-            return 0
+            return 0.0  # Return float explicitly
 
         # Get latest counts
         latest = self.df.iloc[-1]
@@ -29,20 +60,20 @@ class Analytics:
         # Simple Shannon diversity index
         total = latest["plant_count"] + latest["herbivore_count"] + latest["carnivore_count"]
         if total == 0:
-            return 0
+            return 0.0  # Return float explicitly
 
         # Calculate proportions
-        p_plant = latest["plant_count"] / total if total > 0 else 0
-        p_herb = latest["herbivore_count"] / total if total > 0 else 0
-        p_carn = latest["carnivore_count"] / total if total > 0 else 0
+        p_plant = latest["plant_count"] / total if total > 0 else 0.0
+        p_herb = latest["herbivore_count"] / total if total > 0 else 0.0
+        p_carn = latest["carnivore_count"] / total if total > 0 else 0.0
 
         # Shannon index
-        shannon = 0
+        shannon = 0.0
         for p in [p_plant, p_herb, p_carn]:
             if p > 0:
                 shannon -= p * np.log(p)
 
-        return shannon
+        return float(shannon)  # Ensure we return a float
 
     def get_population_dataframe(self) -> pd.DataFrame:
         """Get population data for visualization"""
@@ -108,10 +139,12 @@ class Analytics:
     def render_population_chart(self) -> np.ndarray:
         """Render a population chart as a numpy array for display"""
         if self.df.empty:
-            return np.zeros((100, 100, 3), dtype=np.uint8)
+            # Return empty RGBA image (100x100 with 4 channels)
+            return np.zeros((100, 100, 4), dtype=np.uint8)
 
-        # Create matplotlib figure
+        # Create matplotlib figure with transparent background
         fig, ax = plt.subplots(figsize=(6, 4), dpi=80)
+        fig.patch.set_alpha(1.0)  # Make background opaque
 
         # Plot populations
         ax.plot(self.df["time"], self.df["plant_count"], 'g-', label="Plants")
@@ -123,13 +156,11 @@ class Analytics:
         ax.set_title("Ecosystem Populations")
         ax.legend()
 
-        # Convert to numpy array
+        # Convert to numpy array with RGBA (4 channels)
         canvas = FigureCanvasAgg(fig)
         canvas.draw()
-        buf = canvas.buffer_rgba()
-        plt.close(fig)
-
-        # Convert to numpy array
+        buf = canvas.buffer_rgba()  # Ensure RGBA format
         chart = np.asarray(buf)
+        plt.close(fig)
 
         return chart

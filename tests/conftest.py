@@ -37,7 +37,7 @@ class MockClock:
 @pytest.fixture
 def simple_world():
     """Create a small test world"""
-    return World(width=20, height=20)
+    return World(width=20, height=20, create_water=False)
 
 @pytest.fixture
 def populated_world():

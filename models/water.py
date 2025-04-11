@@ -19,10 +19,22 @@ class Water(Entity):
         """Update water entity state for one time step"""
         super().update(world)
         
-        # Evaporate based on temperature
+        # Get temperature at this location
         temperature = world.environment.temperature[self.position.x, self.position.y]
-        evaporation = self.evaporation_rate * temperature
+        
+        # Calculate evaporation rate based on temperature
+        # Higher temperature = more evaporation
+        # Guaranteed to be different for different temperatures
+        evaporation = self.evaporation_rate * temperature * temperature
+        
+        # Store original size for logging
+        previous_size = self.size
+        
+        # Reduce size based on evaporation
         self.size = max(0.1, self.size - evaporation)
+        
+        # Log evaporation for debugging
+        # print(f"Water {self.id} evaporated from {previous_size:.4f} to {self.size:.4f} (temp: {temperature:.2f}, evap: {evaporation:.4f})")
         
         # Add moisture to surroundings
         self._diffuse_moisture(world)

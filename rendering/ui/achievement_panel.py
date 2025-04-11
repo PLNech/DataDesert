@@ -1,5 +1,7 @@
 import pygame as pg
 from typing import List, Dict
+
+from config import BLACK, GREY, SAND_MEDIUM, FIG, SAND_DARK, ACCENT, CACTUS_DARK
 from .panel import Panel
 
 class AchievementPanel(Panel):
@@ -27,17 +29,17 @@ class AchievementPanel(Panel):
         y_pos = self.rect.top + 35  # Position after title
         
         for achievement in self.achievements:
-            # Achievement title
-            title_color = (255, 255, 150) if achievement['completed'] else (180, 180, 180)
+            # Achievement title - brighter colors for better readability
+            title_color = FIG if achievement['completed'] else SAND_DARK
             title_text = self.font.render(achievement['title'], True, title_color)
             surface.blit(title_text, (self.rect.left + 10, y_pos))
             
-            # Achievement description
-            desc_text = self.font.render(achievement['description'], True, (200, 200, 200))
+            # Achievement description - brighter color
+            desc_text = self.font.render(achievement['description'], True, CACTUS_DARK)
             surface.blit(desc_text, (self.rect.left + 15, y_pos + 20))
             
             # Check mark for completed achievements
             if achievement['completed']:
-                pg.draw.circle(surface, (100, 255, 100), (self.rect.right - 15, y_pos + 10), 6)
+                pg.draw.circle(surface, FIG, (self.rect.right - 15, y_pos + 10), 6)
             
             y_pos += 45  # Space between achievements 

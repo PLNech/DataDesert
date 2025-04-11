@@ -16,12 +16,12 @@ class ControlPanel(Panel):
         button_width, button_height = 40, 30
         margin = 10
         
-        # Create time control buttons
+        # Create time control buttons with reliable text instead of Unicode symbols
         time_controls = [
-            ("⏪", self.time_slow), 
-            ("⏸", self.time_pause),
-            ("▶", self.time_normal),
-            ("⏩", self.time_fast)
+            ("<<", self.time_slow), 
+            ("||", self.time_pause),
+            (">", self.time_normal),
+            (">>", self.time_fast)
         ]
         
         # Create other control buttons
@@ -38,7 +38,10 @@ class ControlPanel(Panel):
         
         for name, callback in time_controls:
             button_rect = pg.Rect(x_pos, y_pos, button_width, button_height)
-            self.buttons.append(Button(button_rect, name, callback))
+            button = Button(button_rect, name, callback)
+            # Add a control_id attribute to distinguish from tool buttons
+            button.control_id = f"time_{name}"
+            self.buttons.append(button)
             x_pos += button_width + 5
         
         # Add other controls below
@@ -47,7 +50,10 @@ class ControlPanel(Panel):
         
         for name, callback, width in other_controls:
             button_rect = pg.Rect(x_pos, y_pos, width, button_height)
-            self.buttons.append(Button(button_rect, name, callback))
+            button = Button(button_rect, name, callback)
+            # Add a control_id attribute to distinguish from tool buttons
+            button.control_id = f"control_{name.lower()}"
+            self.buttons.append(button)
             x_pos += width + margin
             if x_pos + width > self.rect.right - margin:
                 x_pos = self.rect.left + margin
@@ -66,6 +72,7 @@ class ControlPanel(Panel):
             self.toggle_chaos,
             color=(120, 50, 50)
         )
+        self.chaos_button.control_id = "control_chaos"
         self.buttons.append(self.chaos_button)
         self.chaos_active = False
     

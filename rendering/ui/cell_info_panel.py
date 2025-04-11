@@ -1,4 +1,6 @@
 import pygame as pg
+
+from config import GREY
 from .panel import Panel
 
 class CellInfoPanel(Panel):
@@ -26,16 +28,19 @@ class CellInfoPanel(Panel):
             return
             
         y_pos = self.rect.top + 30
-        text_color = (220, 220, 220)
+        # Use white with better contrast for readability
+        text_color = GREY
+        highlight_color = (255, 255, 0)  # Yellow for important data
         
         # Draw position info if available
         if self.cell_position:
-            pos_text = f"Position: ({self.cell_position[0]}, {self.cell_position[1]})"
-            text_surf = self.font.render(pos_text, True, text_color)
+            # Position header with grid coordinates
+            pos_text = f"Grid Cell: X={self.cell_position[0]}, Y={self.cell_position[1]}"
+            text_surf = self.font.render(pos_text, True, highlight_color)
             surface.blit(text_surf, (self.rect.left + 10, y_pos))
             y_pos += 20
         
-        # Draw environmental info
+        # Draw environmental info with more contrast and formatting
         moisture_text = f"Moisture: {self.moisture:.2f}"
         text_surf = self.font.render(moisture_text, True, text_color)
         surface.blit(text_surf, (self.rect.left + 10, y_pos))

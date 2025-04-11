@@ -5,12 +5,13 @@ from models.base import Entity, EntityType, Position
 from models.environment import Environment
 from models.plants import Plant, PLANT_SPECIES
 from models.water import Water
+from models.animals import Herbivore, Carnivore
 
 
 class World:
     """Main container for the simulation world"""
 
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, create_water: bool = True):
         self.width = width
         self.height = height
         self.environment = Environment(width, height)
@@ -35,8 +36,9 @@ class World:
         }
         self.time_step = 0
         
-        # Create water entities at oasis positions
-        self._create_water_entities()
+        # Create water entities at oasis positions if flag is set
+        if create_water:
+            self._create_water_entities()
 
     def _create_water_entities(self):
         """Create water entities at the oasis positions in the environment"""

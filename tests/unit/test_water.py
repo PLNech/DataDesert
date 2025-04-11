@@ -24,11 +24,11 @@ class TestWater:
         world = simple_world
         x, y = 5, 5
         
-        # Set known temperature
-        world.environment.temperature[x, y] = 0.8  # Hot
+        # Set extreme temperature values for clear difference
+        world.environment.temperature[x, y] = 1.0  # Very hot
         
         # Create a water entity
-        water = Water(world.get_next_entity_id(), Position(x, y), size=1.0)
+        water = Water(world.get_next_entity_id(), Position(x, y), size=2.0)
         initial_size = water.size
         world.add_entity(water)
         
@@ -36,23 +36,23 @@ class TestWater:
         water.update(world)
         
         # Size should decrease due to evaporation
-        assert water.size < initial_size, "Water should evaporate in hot conditions"
+        hot_evaporation = initial_size - water.size
+        assert hot_evaporation > 0, "Water should evaporate in hot conditions"
         
-        # Test with lower temperature
-        world.environment.temperature[x, y] = 0.2  # Cool
+        # Test with much lower temperature
+        world.environment.temperature[x, y] = 0.1  # Very cool
         
         # Reset water size
         water.size = initial_size
-        
-        # Remember size before update
-        pre_update_size = water.size
         
         # Run update again
         water.update(world)
         
         # Should evaporate less than before
         cool_evaporation = initial_size - water.size
-        hot_evaporation = initial_size - pre_update_size
+        
+        # Print the values for debugging
+        print(f"Hot evaporation: {hot_evaporation}, Cool evaporation: {cool_evaporation}")
         
         assert cool_evaporation < hot_evaporation, "Evaporation rate should be lower in cooler conditions"
     

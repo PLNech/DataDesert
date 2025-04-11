@@ -147,21 +147,30 @@ class UIManager:
         for i, tab in enumerate(self.tabs):
             if tab.handle_event(event):
                 self.set_active_tab(i)
-                return True
+                return f"tab_{i}"
         
         # Handle content panels
-        if self.tool_panel.visible and self.tool_panel.handle_event(event):
-            return True
+        if self.tool_panel.visible:
+            tool_result = self.tool_panel.handle_event(event)
+            if tool_result and hasattr(self.tool_panel, 'selected_tool'):
+                return f"tool_{self.tool_panel.selected_tool}"
+        
         if self.achievement_panel.visible and self.achievement_panel.handle_event(event):
-            return True
+            return "achievement_panel"
+            
         if self.analytics_panel.visible and self.analytics_panel.handle_event(event):
-            return True
+            return "analytics_panel"
         
         # Handle fixed panels
         if self.control_panel.handle_event(event):
-            return True
+            # Find which control was clicked if possible
+            for button in self.control_panel.buttons:
+                if hasattr(button, 'control_id') and button.rect.collidepoint(event.pos):
+                    return f"control_{button.control_id}"
+            return "control_panel"
+            
         if self.cell_info_panel.handle_event(event):
-            return True
+            return "cell_info_panel"
         
         return False
     

@@ -108,7 +108,10 @@ class GameManager:
         self.renderer.initialize_ui(
             self.unlocked_features, 
             self.select_tool,
-            self.achievements
+            self.achievements,
+            {
+                'toggle_pause': self.toggle_pause  # Pass pause toggle callback to interface
+            }
         )
         
         # Set the initial selected tool in the UI
@@ -134,6 +137,14 @@ class GameManager:
             "rain": "Rain"
         }
         return tool_names.get(tool_id, tool_id)
+
+    def toggle_pause(self) -> None:
+        """Toggle the pause state"""
+        self.paused = not self.paused
+        # Update the interface's pause state
+        self.renderer.set_paused(self.paused)
+        self.add_notification("Simulation " + ("paused" if self.paused else "resumed"))
+        return self.paused
 
     def update(self) -> None:
         """Update game state for one time step"""
@@ -180,8 +191,7 @@ class GameManager:
         if event.key == pg.K_ESCAPE:
             self.running = False
         elif event.key == pg.K_SPACE:
-            self.paused = not self.paused
-            self.add_notification("Simulation " + ("paused" if self.paused else "resumed"))
+            self.toggle_pause()
         elif event.key == pg.K_r:
             self._reset_world()
         elif event.key == pg.K_EQUALS or event.key == pg.K_PLUS:

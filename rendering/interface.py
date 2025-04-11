@@ -77,8 +77,15 @@ class Interface:
     
     def handle_event(self, event: pg.event.Event, world=None) -> bool:
         """Process events for UI and game interactions"""
-        # Handle UI interactions
-        if self.ui_manager.handle_event(event):
+        # Handle UI button interactions but track which panel processed the event
+        event_result = self.ui_manager.handle_event(event)
+        
+        # If a tool was selected, update the active tool
+        if event_result and isinstance(event_result, str) and event_result.startswith('tool_'):
+            self.active_tool = event_result.replace('tool_', '')
+            return True
+        # If a control button was clicked, just return True but don't update active tool
+        elif event_result:
             return True
         
         # Handle map clicks if a tool is active and we have a world
@@ -107,12 +114,17 @@ class Interface:
         """Convert screen coordinates to grid coordinates"""
         # Account for zoom level if implemented
         # Currently using simple 1:1 mapping with sidebar consideration
-        grid_width = (self.screen_width - 240) / world.width
+        grid_width = (self.screen_width - 280) / world.width  # Updated to 280 to match sidebar width
         grid_height = self.screen_height / world.height
         
         grid_x = int(screen_pos[0] / grid_width)
         grid_y = int(screen_pos[1] / grid_height)
         
+        # Clamp coordinates to valid range
+        grid_x = max(0, min(grid_x, world.width - 1))
+        grid_y = max(0, min(grid_y, world.height - 1))
+        
+        print(f"Screen pos {screen_pos} converted to grid pos ({grid_x}, {grid_y})")
         return grid_x, grid_y
     
     def _update_cell_info(self, world, grid_x: int, grid_y: int) -> None:
@@ -127,13 +139,18 @@ class Interface:
         moisture = world.get_moisture(pos)
         nutrients = world.get_nutrients(pos)
         
-        # Update info panel
+        # Update info panel with the current data
         self.ui_manager.update_cell_info(
             entity=entity,
             position=(grid_x, grid_y),
             moisture=moisture,
             nutrients=nutrients
         )
+        
+        # Print debug info to verify updates
+        print(f"Cell info updated: Pos({grid_x}, {grid_y}), Moisture: {moisture:.2f}, Nutrients: {nutrients:.2f}")
+        if entity:
+            print(f"Entity found: {type(entity).__name__}, ID: {entity.id}")
     
     def _place_plant(self, world, grid_x: int, grid_y: int) -> None:
         """Place a new plant in the world"""
@@ -228,7 +245,12 @@ class Interface:
     
     def add_tool(self, text: str, tool_id: str, callback: Callable, info: Optional[str] = None) -> None:
         """Add a tool button to the tool panel"""
-        self.ui_manager.add_tool(text, tool_id, callback, info)
+        # Check if the tool already exists to prevent duplicates
+        existing_tool_ids = [button.tool_id for button in self.ui_manager.tool_panel.buttons 
+                           if hasattr(button, 'tool_id')]
+        
+        if tool_id not in existing_tool_ids:
+            self.ui_manager.add_tool(text, tool_id, callback, info)
     
     def set_active_tool(self, tool_id: str) -> None:
         """Set the currently selected tool"""
@@ -242,6 +264,12 @@ class Interface:
     def set_time_scale(self, scale: float) -> None:
         """Set simulation time scale"""
         self.time_scale = scale
+    
+    def set_paused(self, paused: bool) -> None:
+        """Directly set the pause state"""
+        self.paused = paused
+        # Update UI to show pause state
+        self.ui_manager.control_panel.update_pause_button(self.paused)
     
     def toggle_pause(self) -> None:
         """Toggle pause state"""
@@ -265,23 +293,41 @@ class Interface:
     
     def connect_controls(self, control_callbacks):
         """Connect control panel buttons to callback functions"""
+        # Store the callbacks for reference
+        self.control_callbacks = control_callbacks
+
         # Connect time controls that will actually call our time scale methods
         self.ui_manager.control_panel.time_slow = lambda: self._set_time_scale(0.5)
         self.ui_manager.control_panel.time_pause = lambda: self._toggle_pause()
         self.ui_manager.control_panel.time_normal = lambda: self._set_time_scale(1.0)
         self.ui_manager.control_panel.time_fast = lambda: self._set_time_scale(2.0)
         
-        # Connect other controls
+        # Connect other controls to invoke the provided callbacks
         if 'reset' in control_callbacks:
-            self.ui_manager.control_panel.reset_world = control_callbacks['reset']
+            self.ui_manager.control_panel.reset_world = lambda: self._invoke_callback('reset')
         if 'zoom_in' in control_callbacks:
-            self.ui_manager.control_panel.zoom_in = control_callbacks['zoom_in']
+            self.ui_manager.control_panel.zoom_in = lambda: self._invoke_callback('zoom_in')
         if 'zoom_out' in control_callbacks:
-            self.ui_manager.control_panel.zoom_out = control_callbacks['zoom_out']
+            self.ui_manager.control_panel.zoom_out = lambda: self._invoke_callback('zoom_out')
         if 'fullscreen' in control_callbacks:
-            self.ui_manager.control_panel.toggle_fullscreen = control_callbacks['fullscreen']
+            self.ui_manager.control_panel.toggle_fullscreen = lambda: self._invoke_callback('fullscreen')
         if 'chaos' in control_callbacks:
-            self.ui_manager.control_panel.toggle_chaos = control_callbacks['chaos']
+            self.ui_manager.control_panel.toggle_chaos = lambda: self._invoke_callback('chaos')
+            
+    def _invoke_callback(self, callback_type):
+        """Invoke a control callback and handle its result"""
+        if callback_type in self.control_callbacks:
+            # Call the callback and get its result
+            result = self.control_callbacks[callback_type]()
+            
+            # Update UI state based on result
+            if callback_type == 'chaos':
+                self.ui_manager.control_panel.chaos_active = not self.ui_manager.control_panel.chaos_active
+                self.ui_manager.control_panel.chaos_button.text = f"Chaos Mode: {'ON' if self.ui_manager.control_panel.chaos_active else 'OFF'}"
+                self.ui_manager.control_panel.chaos_button.color = (200, 50, 50) if self.ui_manager.control_panel.chaos_active else (120, 50, 50)
+            
+            return result
+        return None
 
     def _set_time_scale(self, scale: float) -> None:
         """Set simulation time scale and update UI to reflect this"""
@@ -289,9 +335,19 @@ class Interface:
         self.paused = False
         # Update UI to show active state for this button
         self.ui_manager.control_panel.update_speed_buttons(scale)
+        
+        # If we have a pause toggle callback, notify it that we're unpaused
+        if 'toggle_pause' in self.control_callbacks and self.paused:
+            self.control_callbacks['toggle_pause']()
 
     def _toggle_pause(self) -> None:
         """Toggle pause state and update UI to reflect this"""
-        self.paused = not self.paused
-        # Update UI to show pause state
-        self.ui_manager.control_panel.update_pause_button(self.paused) 
+        # Check if we have an external pause toggle callback
+        if 'toggle_pause' in self.control_callbacks:
+            # Let the GameManager handle the pause toggle
+            self.control_callbacks['toggle_pause']()
+        else:
+            # Fallback to internal toggle if no callback provided
+            self.paused = not self.paused
+            # Update UI to show pause state
+            self.ui_manager.control_panel.update_pause_button(self.paused) 

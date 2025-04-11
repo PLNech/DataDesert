@@ -1,7 +1,8 @@
-from config import CELL_WIDTH, CELL_HEIGHT, CELL_MARGIN, GREY, BLUE, RED, WHITE
+from config import CELL_WIDTH, CELL_HEIGHT, CELL_MARGIN, GREY, BLUE, RED, WHITE, FIG
 import pygame as pg
 
 from models.base import EntityType
+from models.water import Water
 from simulation.analytics import Analytics
 from simulation.world import World
 from rendering.interface import Interface
@@ -24,8 +25,14 @@ class Renderer:
 
         # Create surfaces
         self.background = pg.Surface(self.display.get_size())
-        self.background = self.background.convert()
-        self.background.fill(GREY)
+        
+        # Only convert if display is initialized (checks for headless test environment)
+        try:
+            self.background = self.background.convert()
+            self.background.fill(GREY)
+        except pg.error:
+            # We're in a test environment without a display
+            self.background.fill(GREY)
 
         # Font for displaying information
         self.font = pg.font.SysFont('Arial', 18)
@@ -39,7 +46,7 @@ class Renderer:
         self.zoom_controller = ZoomController()
         self.cell_width, self.cell_height, self.cell_margin = self.zoom_controller.get_cell_dimensions(
             self.base_cell_width, self.base_cell_height, self.base_cell_margin)
-
+ 
         # Add fullscreen attribute
         self.is_fullscreen = False
 
@@ -80,8 +87,13 @@ class Renderer:
         """Handle UI events"""
         return self.interface.handle_event(event, None)  # Pass None for world, will be updated in render
     
-    def initialize_ui(self, available_tools, select_tool_callback, achievements):
+    def initialize_ui(self, available_tools, select_tool_callback, achievements, control_callbacks=None):
         """Initialize UI with available tools and achievements"""
+        # We need to clear existing tools to prevent duplicates 
+        # (the interface.add_tool has protection, but just to be safe)
+        if hasattr(self.interface.ui_manager, 'tool_panel'):
+            self.interface.ui_manager.tool_panel.buttons = []
+            
         # Map available tools to the new interface's tool system
         for tool_type, tools in available_tools.items():
             if not tools:
@@ -125,7 +137,10 @@ class Renderer:
                     "Hunts herbivores, needs water"
                 )
         
-        # Initialize achievements
+        # Initialize achievements - clear existing ones first
+        if hasattr(self.interface.ui_manager, 'achievement_panel'):
+            self.interface.ui_manager.achievement_panel.achievements = []
+            
         for achievement in achievements.values():
             self.interface.add_achievement(
                 achievement["title"],
@@ -133,15 +148,24 @@ class Renderer:
                 achievement["unlocked"]
             )
         
-        # Connect control panel callbacks
-        control_callbacks = {
+        # Merge default callbacks with any provided callbacks
+        default_callbacks = {
             'reset': self.reset_callback,
             'zoom_in': self.zoom_in_callback,
             'zoom_out': self.zoom_out_callback,
             'fullscreen': self.toggle_fullscreen_callback,
             'chaos': self.toggle_chaos_callback
         }
-        self.interface.connect_controls(control_callbacks)
+        
+        # Merge with provided callbacks, giving priority to provided ones
+        if control_callbacks:
+            default_callbacks.update(control_callbacks)
+            
+        self.interface.connect_controls(default_callbacks)
+    
+    def set_paused(self, paused: bool) -> None:
+        """Set the pause state in the interface"""
+        self.interface.set_paused(paused)
     
     def set_selected_tool(self, tool_id):
         """Set the currently selected tool in the UI"""
@@ -205,8 +229,8 @@ class Renderer:
                 pg.draw.rect(self.display, color, rect)
 
             elif entity.entity_type == EntityType.HERBIVORE:
-                # Blue for herbivores
-                pg.draw.rect(self.display, BLUE, rect)
+                # Fig for herbivores
+                pg.draw.rect(self.display, FIG, rect)
 
             elif entity.entity_type == EntityType.CARNIVORE:
                 # Red for carnivores
@@ -287,45 +311,64 @@ class Renderer:
     def reset_callback(self):
         """Reset world callback - will be connected to game manager"""
         print("Reset world requested")
-        # Will be overridden by game manager
+        # This will be overridden by game manager
+        return "reset_world"
     
     def zoom_in_callback(self):
         """Zoom in callback"""
-        print("Zooming out...")
+        print("Zooming in...")
         self.zoom_controller.zoom_in()
         self.cell_width, self.cell_height, self.cell_margin = self.zoom_controller.get_cell_dimensions(
             self.base_cell_width, self.base_cell_height, self.base_cell_margin)
+        # Return a status for the calling code to use
+        return "zoom_in"
     
     def zoom_out_callback(self):
         """Zoom out callback"""
+        print("Zooming out...")
         self.zoom_controller.zoom_out()
         self.cell_width, self.cell_height, self.cell_margin = self.zoom_controller.get_cell_dimensions(
             self.base_cell_width, self.base_cell_height, self.base_cell_margin)
+        # Return a status for the calling code to use
+        return "zoom_out"
     
     def toggle_fullscreen_callback(self):
         """Toggle fullscreen callback"""
+        print("Toggling fullscreen")
         # Store current dimensions
         current_w, current_h = self.display.get_size()
         
-        # Toggle fullscreen using pygame's built-in function
-        pg.display.toggle_fullscreen()
+        # Toggle fullscreen state first
+        self.is_fullscreen = not self.is_fullscreen
         
-        # If that doesn't work well on this platform, try this alternative method:
+        # Create a new display with appropriate flags based on fullscreen state
         if self.is_fullscreen:
-            self.display = pg.display.set_mode(
-                (current_w, current_h), 
-                pg.HWSURFACE | pg.DOUBLEBUF
-            )
-        else:
             self.display = pg.display.set_mode(
                 (current_w, current_h), 
                 pg.FULLSCREEN | pg.HWSURFACE | pg.DOUBLEBUF
             )
+        else:
+            self.display = pg.display.set_mode(
+                (current_w, current_h), 
+                pg.HWSURFACE | pg.DOUBLEBUF
+            )
+            
+        # Recreate background surface with the new display size
+        self.background = pg.Surface(self.display.get_size())
         
-        # Toggle state
-        self.is_fullscreen = not self.is_fullscreen
+        # Only convert if display is initialized (checks for headless test environment)
+        try:
+            self.background = self.background.convert()
+            self.background.fill(GREY)
+        except pg.error:
+            # We're in a test environment without a display
+            self.background.fill(GREY)
+        
+        # Return a status for the calling code to use
+        return "toggle_fullscreen"
     
     def toggle_chaos_callback(self):
         """Toggle chaos mode callback"""
         print("Chaos mode toggle requested")
-        # Will be connected to random entity spawning
+        # Return a status for the calling code to use
+        return "toggle_chaos"
